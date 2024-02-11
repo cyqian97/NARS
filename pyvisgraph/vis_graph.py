@@ -29,7 +29,7 @@ from warnings import warn
 
 from pyvisgraph.graph import Graph, Edge
 from pyvisgraph.shortest_path import shortest_path
-from pyvisgraph.visible_vertices import visible_vertices, point_in_polygon
+from pyvisgraph.visible_vertices import visible_vertices, point_in_polygon, point_in_wall, point_valid
 from pyvisgraph.visible_vertices import closest_point
 
 PYTHON3 = version_info[0] == 3
@@ -56,7 +56,7 @@ class VisGraph(object):
         with open(filename, 'wb') as output:
             pickle.dump((self.graph, self.visgraph), output, -1)
 
-    def build(self, input, workers=1, status=True): 
+    def build(self, input, workers=1, status=True):
         """Build visibility graph based on a list of polygons.
 
         The input must be a list of polygons, where each polygon is a list of
@@ -73,12 +73,12 @@ class VisGraph(object):
         self.visgraph = Graph([])
 
         points = self.graph.get_points()
-        batch_size = 10 
+        batch_size = 10
 
         if workers == 1:
             for batch in tqdm([points[i:i + batch_size]
                                for i in xrange(0, len(points), batch_size)],
-                            disable=not status):
+                              disable=not status):
                 for edge in _vis_graph(self.graph, batch):
                     self.visgraph.add_edge(edge)
         else:
@@ -87,7 +87,7 @@ class VisGraph(object):
                        for i in xrange(0, len(points), batch_size)]
 
             results = list(tqdm(pool.imap(_vis_graph_wrapper, batches), total=len(batches),
-                disable=not status))
+                                disable=not status))
             for result in results:
                 for edge in result:
                     self.visgraph.add_edge(edge)
@@ -157,6 +157,7 @@ def _vis_graph_wrapper(args):
         return _vis_graph(*args)
     except KeyboardInterrupt:
         pass
+
 
 def _vis_graph(graph, points):
     visible_edges = []

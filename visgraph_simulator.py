@@ -187,7 +187,7 @@ def game_loop():
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if event.button == LEFT:
                         if len(sim.polygons) > 0:
-                            print(sim.vis_graph.point_in_wall(vg.Point(pos[0], pos[1])))
+                            print(sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])))
                         sim.work_polygon.append(vg.Point(pos[0], pos[1]))
                     elif event.button == RIGHT:
                         sim.close_polygon()

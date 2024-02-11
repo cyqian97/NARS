@@ -54,6 +54,10 @@ class Point(object):
     def __repr__(self):
         return "Point(%.2f, %.2f)" % (self.x, self.y)
 
+    def __call__(self):
+        return (self.x,self.y)
+
+
 
 class Edge(object):
     __slots__ = ('p1', 'p2')

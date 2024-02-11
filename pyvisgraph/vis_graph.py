@@ -134,6 +134,14 @@ class VisGraph(object):
 
         return point_in_polygon(point, self.graph)
 
+    def point_in_wall(self, point):
+        """Return True if point in a polygon 0 (wall), False otherwise."""
+        return point_in_wall(point, self.graph)
+
+    def point_valid(self, point):
+        """Return True if the point p is interior to polygon 0 (wall) and not interior to other polygons, False otherwise."""
+        return point_valid(point, self.graph)
+
     def closest_point(self, point, polygon_id, length=0.001):
         """Return closest Point outside polygon from point.
 

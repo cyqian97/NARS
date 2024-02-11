@@ -155,6 +155,26 @@ def point_in_polygon(p, graph):
             return polygon
     return -1
 
+def point_in_wall(p, graph):
+    """Return true if the point p is interior to polygon 0 (wall) in graph."""
+    if polygon_crossing(p, graph.polygons[0]):
+        return True
+    else:
+        return False
+
+def point_valid(p, graph):
+    """Return true if the point p is interior to polygon 0 (wall) and not interior to other polygons."""
+    if polygon_crossing(p, graph.polygons[0]):
+        return True
+    else:
+        return False
+    
+    for polygon in graph.polygons:
+        if polygon == 0 and not polygon_crossing(p, graph.polygons[0]):
+            return False
+        elif polygon_crossing(p, graph.polygons[polygon]):
+            return False
+    return True
 
 def unit_vector(c, p):
     magnitude = edge_distance(c, p)

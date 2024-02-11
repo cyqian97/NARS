@@ -26,8 +26,8 @@ import pygame
 
 pygame.init()
 
-display_width = 1280
-display_height = 720
+display_width = 1600
+display_height = 900
 
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -39,16 +39,18 @@ LEFT = 1
 RIGHT = 3
 
 gameDisplay = pygame.display.set_mode((display_width, display_height))
-pygame.display.set_caption('Visibility Graph Simulator')
+pygame.display.set_caption('NARS Simulator')
 clock = pygame.time.Clock()
 
 def draw_polygon(polygon, color, size, complete=True):
     if complete:
         polygon.append(polygon[0])
-    p1 = polygon[0]
-    for p2 in polygon[1:]:
-        pygame.draw.line(gameDisplay, color, (p1.x, p1.y), (p2.x, p2.y), size)
-        p1 = p2
+        pygame.draw.polygon(gameDisplay,color,[point() for point in polygon])
+    else:
+        p1 = polygon[0]
+        for p2 in polygon[1:]:
+            pygame.draw.line(gameDisplay, color, (p1.x, p1.y), (p2.x, p2.y), size)
+            p1 = p2
 
 def draw_visible_vertices(edges, color, size):
     for edge in edges:
@@ -115,7 +117,7 @@ class Simulator():
         self.end_point = None
         self.shortest_path = []
 
-        self.g = vg.VisGraph()
+        self.vis_graph = vg.VisGraph()
         self.built = False
         self.show_static_visgraph = True
         self.show_mouse_visgraph = False
@@ -131,7 +133,7 @@ class Simulator():
         if len(self.work_polygon) > 1:
             self.polygons.append(self.work_polygon)
             self.work_polygon = []
-            self.g.build(self.polygons, status=False)
+            self.vis_graph.build(self.polygons, status=False)
             self.built = True
 
     def draw_point_undo(self):
@@ -184,6 +186,8 @@ def game_loop():
                         sim.clear_all()
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if event.button == LEFT:
+                        if len(sim.polygons) > 0:
+                            print(sim.vis_graph.point_in_wall(vg.Point(pos[0], pos[1])))
                         sim.work_polygon.append(vg.Point(pos[0], pos[1]))
                     elif event.button == RIGHT:
                         sim.close_polygon()
@@ -195,12 +199,12 @@ def game_loop():
                     elif pygame.mouse.get_pressed()[RIGHT-1] or event.button == RIGHT:
                         sim.end_point = vg.Point(pos[0], pos[1])
                     if sim.start_point and sim.end_point:
-                        sim.shortest_path = sim.g.shortest_path(sim.start_point, sim.end_point)
+                        sim.shortest_path = sim.vis_graph.shortest_path(sim.start_point, sim.end_point)
 
             if sim.show_mouse_visgraph and sim.built:
                 if event.type == pygame.MOUSEMOTION:
                     sim.mouse_point = vg.Point(pos[0], pos[1])
-                    sim.mouse_vertices = sim.g.find_visible(sim.mouse_point)
+                    sim.mouse_vertices = sim.vis_graph.find_visible(sim.mouse_point)
 
         # Display loop
         gameDisplay.fill(white)
@@ -209,11 +213,15 @@ def game_loop():
             draw_polygon(sim.work_polygon, black, 3, complete=False)
 
         if len(sim.polygons) > 0:
-            for polygon in sim.polygons:
-                draw_polygon(polygon, black, 3)
+            polygon = sim.polygons[0]
+            polygon.append(polygon[0])
+            draw_polygon(polygon, black, 3, complete=False)
+            if len(sim.polygons) > 1:
+                for polygon in sim.polygons[1:]:
+                    draw_polygon(polygon, black, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_visible_vertices(sim.g.visgraph.get_edges(), gray, 1)
+            draw_visible_vertices(sim.vis_graph.visgraph.get_edges(), gray, 1)
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)

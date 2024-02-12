@@ -165,11 +165,10 @@ def point_in_wall(p, graph):
 def point_valid(p, graph):
     """Return true if the point p is interior to polygon 0 (wall) and not interior to other polygons."""    
     for polygon in graph.polygons:
-        print(polygon)
         # TODO: this polygon==0 doesn't work!!!!!!!
-        if polygon == 0 and not polygon_crossing(p, graph.polygons[0]):
-            print("Here!!!!!!")
-            return False
+        if polygon == 0:
+            if not polygon_crossing(p, graph.polygons[0]):
+                return False
         elif polygon_crossing(p, graph.polygons[polygon]):
             return False
     return True

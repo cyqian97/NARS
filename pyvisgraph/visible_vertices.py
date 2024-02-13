@@ -144,8 +144,12 @@ def edge_in_polygon(p1, p2, graph):
         return False
     if p1.polygon_id == -1 or p2.polygon_id == -1:
         return False
+    
     mid_point = Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
-    return polygon_crossing(mid_point, graph.polygons[p1.polygon_id])
+    if p1.polygon_id == 0 and  p2.polygon_id == 0:
+        return not polygon_crossing(mid_point, graph.polygons[p1.polygon_id])
+    else:
+        return polygon_crossing(mid_point, graph.polygons[p1.polygon_id])
 
 
 def point_in_polygon(p, graph):

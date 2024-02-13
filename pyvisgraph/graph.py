@@ -58,7 +58,6 @@ class Graph(object):
             if polygon[0] == polygon[-1] and len(polygon) > 1:
                 polygon.pop()
             # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
-            print([str(point) for point in polygon]) 
             current_edges = []
             for i, point in enumerate(polygon):
                 sibling_point = polygon[(i + 1) % len(polygon)]

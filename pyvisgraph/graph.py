@@ -21,77 +21,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from collections import defaultdict
+import sys
+from pyvisgraph.classes import Point, Edge
+from pyvisgraph.visible_vertices import polygon_crossing
 
+eps = 0.01
 
-class Point(object):
-    __slots__ = ('x', 'y', 'polygon_id')
-
-    def __init__(self, x, y, polygon_id=-1):
-        self.x = float(x)
-        self.y = float(y)
-        self.polygon_id = polygon_id
-
-    def __eq__(self, point):
-        return point and self.x == point.x and self.y == point.y
-
-    def __ne__(self, point):
-        return not self.__eq__(point)
-
-    def __lt__(self, point):
-        """ This is only needed for shortest path calculations where heapq is
-            used. When there are two points of equal distance, heapq will
-            instead evaluate the Points, which doesnt work in Python 3 and
-            throw a TypeError."""
-        return hash(self) < hash(point)
-
-    def __str__(self):
-        return "(%.2f, %.2f)" % (self.x, self.y)
-
-    def __hash__(self):
-        return self.x.__hash__() ^ self.y.__hash__()
-
-    def __repr__(self):
-        return "Point(%.2f, %.2f)" % (self.x, self.y)
-
-    def __call__(self):
-        return (self.x,self.y)
-
-
-
-class Edge(object):
-    __slots__ = ('p1', 'p2')
-
-    def __init__(self, point1, point2):
-        self.p1 = point1
-        self.p2 = point2
-
-    def get_adjacent(self, point):
-        if point == self.p1:
-            return self.p2
-        return self.p1
-
-    def __contains__(self, point):
-        return self.p1 == point or self.p2 == point
-
-    def __eq__(self, edge):
-        if self.p1 == edge.p1 and self.p2 == edge.p2:
-            return True
-        if self.p1 == edge.p2 and self.p2 == edge.p1:
-            return True
-        return False
-
-    def __ne__(self, edge):
-        return not self.__eq__(edge)
-
-    def __str__(self):
-        return "({}, {})".format(self.p1, self.p2)
-
-    def __repr__(self):
-        return "Edge({!r}, {!r})".format(self.p1, self.p2)
-
-    def __hash__(self):
-        return self.p1.__hash__() ^ self.p2.__hash__()
 
 
 class Graph(object):
@@ -117,8 +54,12 @@ class Graph(object):
         self.polygons = defaultdict(set)
         pid = 0
         for polygon in polygons:
+
             if polygon[0] == polygon[-1] and len(polygon) > 1:
                 polygon.pop()
+            # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
+            print([str(point) for point in polygon]) 
+            current_edges = []
             for i, point in enumerate(polygon):
                 sibling_point = polygon[(i + 1) % len(polygon)]
                 edge = Edge(point, sibling_point)
@@ -126,7 +67,17 @@ class Graph(object):
                     point.polygon_id = pid
                     sibling_point.polygon_id = pid
                     self.polygons[pid].add(edge)
+                    current_edges.append(edge)
                 self.add_edge(edge)
+                
+            mid_point =(current_edges[0].p1+current_edges[0].p2)/2
+            dir = eps*(current_edges[0].p2-current_edges[0].p1).to_vec()/current_edges[0].length()
+            dir = [dir[1],-dir[0]] # The y axis is after x axis in pygame, thus this rotation in counterclockwise 90deg.
+            test_point = mid_point + Point.from_vec(dir)
+            if polygon_crossing(test_point,current_edges):
+                for edge in current_edges:
+                    edge.dir = -1
+            
             if len(polygon) > 2:
                 pid += 1
 

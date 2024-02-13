@@ -23,7 +23,7 @@ SOFTWARE.
 """
 from __future__ import division
 from math import pi, sqrt, atan, acos
-from pyvisgraph.graph import Point
+from pyvisgraph.classes import Point
 
 INF = 10000
 CCW = 1
@@ -165,7 +165,6 @@ def point_in_wall(p, graph):
 def point_valid(p, graph):
     """Return true if the point p is interior to polygon 0 (wall) and not interior to other polygons."""    
     for polygon in graph.polygons:
-        # TODO: this polygon==0 doesn't work!!!!!!!
         if polygon == 0:
             if not polygon_crossing(p, graph.polygons[0]):
                 return False

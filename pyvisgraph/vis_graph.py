@@ -45,6 +45,7 @@ class VisGraph(object):
     def __init__(self):
         self.graph = None
         self.visgraph = None
+        self.cov_chains = None
 
     def load(self, filename):
         """Load obstacle graph and visibility graph. """

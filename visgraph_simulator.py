@@ -21,8 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 import pyvisgraph as vg
 import pygame
+import datetime
+import glob
+import os
+import re
 
 pygame.init()
 
@@ -38,44 +43,51 @@ green = (0, 128, 0)
 LEFT = 1
 RIGHT = 3
 
-# gameDisplay = pygame.display.set_mode((display_width, display_height))
-flags = pygame.OPENGL | pygame.FULLSCREEN
-gameDisplay = pygame.display.set_mode((1920, 1080), flags, vsync=1)
-pygame.display.set_caption('NARS Simulator')
+gameDisplay = pygame.display.set_mode((display_width, display_height))
+# flags = pygame.OPENGL | pygame.FULLSCREEN
+# gameDisplay = pygame.display.set_mode((1920, 1080), flags, vsync=1)
+pygame.display.set_caption("NARS Simulator")
 clock = pygame.time.Clock()
+
 
 def draw_polygon(polygon, color, size, complete=True):
     if complete:
         polygon.append(polygon[0])
-        pygame.draw.polygon(gameDisplay,color,[point() for point in polygon])
+        pygame.draw.polygon(gameDisplay, color, [point() for point in polygon])
     else:
         p1 = polygon[0]
         for p2 in polygon[1:]:
             pygame.draw.line(gameDisplay, color, (p1.x, p1.y), (p2.x, p2.y), size)
             p1 = p2
 
+
 def draw_visible_vertices(edges, color, size):
     for edge in edges:
-        pygame.draw.line(gameDisplay, color, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size)
+        pygame.draw.line(
+            gameDisplay, color, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
+        )
+
 
 def draw_visible_mouse_vertices(pos, points, color, size):
     for point in points:
         pygame.draw.line(gameDisplay, color, (pos.x, pos.y), (point.x, point.y), size)
+
 
 def draw_text(mode_txt, color, size, x, y):
     font = pygame.font.SysFont(None, size)
     text = font.render(mode_txt, True, color)
     gameDisplay.blit(text, (x, y))
 
+
 def help_screen():
     rectw = 550
     recth = 500
-    rectwi = rectw-10
-    recthi = recth-10
-    startx = display_width*0.5-rectw/2
-    starty = display_height*0.5-recth/2
-    startxi = display_width*0.5-rectwi/2
-    startyi = display_height*0.5-recthi/2
+    rectwi = rectw - 10
+    recthi = recth - 10
+    startx = display_width * 0.5 - rectw / 2
+    starty = display_height * 0.5 - recth / 2
+    startxi = display_width * 0.5 - rectwi / 2
+    startyi = display_height * 0.5 - recthi / 2
 
     helping = True
     while helping:
@@ -90,25 +102,54 @@ def help_screen():
         pygame.draw.rect(gameDisplay, black, (startx, starty, rectw, recth))
         pygame.draw.rect(gameDisplay, white, (startxi, startyi, rectwi, recthi))
 
-        draw_text("-- VISIBILITY GRAPH SIMULATOR --", black, 30, startxi+90, startyi+10)
-        draw_text("Q - QUIT", black, 25, startxi+10, startyi+45)
-        draw_text("H - TOGGLE HELP SCREEN (THIS SCREEN)", black, 25, startxi+10, startyi+80)
-        draw_text("D - TOGGLE DRAW MODE", black, 25, startxi+10, startyi+115)
-        draw_text("    Draw polygons by left clicking to set a point of the", black, 25, startxi+10, startyi+150)
-        draw_text("    polygon. Right click to close and finish the polygon.", black, 25, startxi+10, startyi+180)
-        draw_text("    U - UNDO LAST POLYGON POINT PLACEMENT", black, 25, startxi+10, startyi+215)
-        draw_text("    C - CLEAR THE SCREEN", black, 25, startxi+10, startyi+250)
-        draw_text("S - TOGGLE SHORTEST PATH MODE", black, 25, startxi+10, startyi+285)
-        draw_text("    Left click to set start point, right click to set end point.", black, 25, startxi+10, startyi+320)
-        draw_text("    Hold left/right mouse button down to drag start/end point.", black, 25, startxi+10, startyi+355)
-        draw_text("M - TOGGLE VISIBILE VERTICES FROM MOUSE CURSOR", black, 25, startxi+10, startyi+390)
-        draw_text("G - TOGGLE POLYGON VISIBILITY GRAPH", black, 25, startxi+10, startyi+425)
-        draw_text("© Christian August Reksten-Monsen", black, 20, startxi+140, startyi+470)
+        draw_text(
+            "-- VISIBILITY GRAPH SIMULATOR --", black, 30, startxi + 90, startyi + 10
+        )
+        draw_text("Q - QUIT", black, 25, startxi + 10, startyi + 45)
+        draw_text(
+            "H - TOGGLE HELP SCREEN (THIS SCREEN)",
+            black,
+            25,
+            startxi + 10,
+            startyi + 80,
+        )
+        draw_text("D - TOGGLE DRAW MODE", black, 25, startxi + 10, startyi + 115)
+        draw_text(
+            "    Draw polygons by left clicking to set a point of the",
+            black,
+            25,
+            startxi + 10,
+            startyi + 150,
+        )
+        draw_text(
+            "    polygon. Right click to close and finish the polygon.",
+            black,
+            25,
+            startxi + 10,
+            startyi + 180,
+        )
+        draw_text(
+            "    U - UNDO LAST POLYGON POINT PLACEMENT",
+            black,
+            25,
+            startxi + 10,
+            startyi + 215,
+        )
+        draw_text("    C - CLEAR THE SCREEN", black, 25, startxi + 10, startyi + 250)
+        draw_text("S - SAVE MAP", black, 25, startxi + 10, startyi + 285)
+        draw_text("L - LOAD MAP", black, 25, startxi + 10, startyi + 320)
+        # draw_text("S - TOGGLE SHORTEST PATH MODE", black, 25, startxi+10, startyi+285)
+        # draw_text("    Left click to set start point, right click to set end point.", black, 25, startxi+10, startyi+320)
+        # draw_text("    Hold left/right mouse button down to drag start/end point.", black, 25, startxi+10, startyi+355)
+        # draw_text("M - TOGGLE VISIBILE VERTICES FROM MOUSE CURSOR", black, 25, startxi+10, startyi+390)
+        # draw_text("G - TOGGLE POLYGON VISIBILITY GRAPH", black, 25, startxi+10, startyi+425)
+        # draw_text("© Christian August Reksten-Monsen", black, 20, startxi+140, startyi+470)
 
         pygame.display.update()
         clock.tick(10)
 
-class Simulator():
+
+class Simulator:
 
     def __init__(self):
         self.polygons = []
@@ -154,7 +195,45 @@ class Simulator():
     def _clear_shortest_path(self):
         self.shortest_path = []
         self.start_point = []
-        self.end_point = [] 
+        self.end_point = []
+
+    def save_map(self):
+        # Prompt the user for input
+        file_name = input("Enter file name: ")
+        if not file_name:
+            # Use the current time as the file name
+            # Format the time as a string suitable for a file name
+            file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.vis_graph.save(file_name)  # Check if the input is empty
+        print(f"File saved: {file_name}")
+
+    def load_map(self):
+        # Directory where the files are located
+        directory = "./"  # Adjust this path to your directory
+
+        # Pattern to match the files with datetime format "YYYY-MM-DD_HH-MM-SS"
+        pattern = r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}"
+
+        # List all files in the directory
+        files = glob.glob(os.path.join(directory, "*"))
+
+        # Filter files that match the pattern
+        filtered_files = [f for f in files if re.search(pattern, os.path.basename(f))]
+
+        # Find the most recently created file among the filtered files
+        if filtered_files:
+            latest_file = max(filtered_files, key=os.path.getctime)
+            print(f"Loading the latest file: {latest_file}")
+            self.vis_graph.load(latest_file)
+            # for polygon in self.vis_graph.graph.polygons:
+            #     self.polygons.append(self.vis_graph.graph.polygons[polygon])
+            #TODO: Fix how to display the loaded polygons
+            # Load the file or perform your desired operation here
+        else:
+            print("No files found matching the pattern.")
+
+            
+
 
 def game_loop():
     sim = Simulator()
@@ -178,7 +257,10 @@ def game_loop():
                 elif event.key == pygame.K_d:
                     sim.toggle_draw_mode()
                 elif event.key == pygame.K_s:
-                    sim.toggle_shortest_path_mode()
+                    sim.save_map()
+                elif event.key == pygame.K_l:
+                    sim.load_map()
+                #     sim.toggle_shortest_path_mode()
 
             if sim.mode_draw:
                 if event.type == pygame.KEYUP:
@@ -197,13 +279,17 @@ def game_loop():
                         sim.close_polygon()
 
             if sim.mode_path and sim.built:
-                if event.type == pygame.MOUSEBUTTONUP or any(pygame.mouse.get_pressed()):
-                    if pygame.mouse.get_pressed()[LEFT-1] or event.button == LEFT:
+                if event.type == pygame.MOUSEBUTTONUP or any(
+                    pygame.mouse.get_pressed()
+                ):
+                    if pygame.mouse.get_pressed()[LEFT - 1] or event.button == LEFT:
                         sim.start_point = vg.Point(pos[0], pos[1])
-                    elif pygame.mouse.get_pressed()[RIGHT-1] or event.button == RIGHT:
+                    elif pygame.mouse.get_pressed()[RIGHT - 1] or event.button == RIGHT:
                         sim.end_point = vg.Point(pos[0], pos[1])
                     if sim.start_point and sim.end_point:
-                        sim.shortest_path = sim.vis_graph.shortest_path(sim.start_point, sim.end_point)
+                        sim.shortest_path = sim.vis_graph.shortest_path(
+                            sim.start_point, sim.end_point
+                        )
 
             if sim.show_mouse_visgraph and sim.built:
                 if event.type == pygame.MOUSEMOTION:
@@ -242,6 +328,7 @@ def game_loop():
 
         pygame.display.update()
         clock.tick(20)
+
 
 if __name__ == "__main__":
     gameDisplay.fill(white)

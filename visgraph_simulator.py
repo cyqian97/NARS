@@ -38,7 +38,9 @@ green = (0, 128, 0)
 LEFT = 1
 RIGHT = 3
 
-gameDisplay = pygame.display.set_mode((display_width, display_height))
+# gameDisplay = pygame.display.set_mode((display_width, display_height))
+flags = pygame.OPENGL | pygame.FULLSCREEN
+gameDisplay = pygame.display.set_mode((1920, 1080), flags, vsync=1)
 pygame.display.set_caption('NARS Simulator')
 clock = pygame.time.Clock()
 

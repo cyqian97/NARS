@@ -49,12 +49,12 @@ class VisGraph(object):
     def load(self, filename):
         """Load obstacle graph and visibility graph. """
         with open(filename, 'rb') as load:
-            self.graph, self.visgraph = pickle.load(load)
+            self.graph, self.visgraph, self.input = pickle.load(load)
 
     def save(self, filename):
         """Save obstacle graph and visibility graph. """
         with open(filename, 'wb') as output:
-            pickle.dump((self.graph, self.visgraph), output, -1)
+            pickle.dump((self.graph, self.visgraph, self.input), output, -1)
 
     def build(self, input, workers=1, status=True):
         """Build visibility graph based on a list of polygons.
@@ -68,7 +68,7 @@ class VisGraph(object):
         will be started.
         Set status=False to turn off the statusbar when building.
         """
-
+        self.input = input # copy of input to save the raw polygon info
         self.graph = Graph(input)
         self.visgraph = Graph([])
 

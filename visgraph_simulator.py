@@ -204,12 +204,12 @@ class Simulator:
             # Use the current time as the file name
             # Format the time as a string suitable for a file name
             file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.vis_graph.save(file_name)  # Check if the input is empty
+        self.vis_graph.save(os.path.join("environments",file_name))  # Check if the input is empty
         print(f"File saved: {file_name}")
 
     def load_map(self):
         # Directory where the files are located
-        directory = "./"  # Adjust this path to your directory
+        directory = "./environments"  # Adjust this path to your directory
 
         # Pattern to match the files with datetime format "YYYY-MM-DD_HH-MM-SS"
         pattern = r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}"
@@ -225,14 +225,10 @@ class Simulator:
             latest_file = max(filtered_files, key=os.path.getctime)
             print(f"Loading the latest file: {latest_file}")
             self.vis_graph.load(latest_file)
-            # for polygon in self.vis_graph.graph.polygons:
-            #     self.polygons.append(self.vis_graph.graph.polygons[polygon])
-            #TODO: Fix how to display the loaded polygons
-            # Load the file or perform your desired operation here
+            self.polygons = self.vis_graph.input
+            self.built = True
         else:
             print("No files found matching the pattern.")
-
-            
 
 
 def game_loop():

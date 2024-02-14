@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from __future__ import division
 from math import pi, sqrt, atan, acos
 from pyvisgraph.classes import Point
@@ -35,7 +36,8 @@ COLIN_TOLERANCE = 10
 T = 10**COLIN_TOLERANCE
 T2 = 10.0**COLIN_TOLERANCE
 
-def visible_vertices(point, graph, origin=None, destination=None, scan='full'):
+
+def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
     """Returns list of Points in graph visible by point.
 
     If origin and/or destination Points are given, these will also be checked
@@ -46,8 +48,10 @@ def visible_vertices(point, graph, origin=None, destination=None, scan='full'):
     """
     edges = graph.get_edges()
     points = graph.get_points()
-    if origin: points.append(origin)
-    if destination: points.append(destination)
+    if origin:
+        points.append(origin)
+    if destination:
+        points.append(destination)
     points.sort(key=lambda p: (angle(point, p), edge_distance(point, p)))
 
     # Initialize open_edges with any intersecting edges on the half line from
@@ -55,18 +59,23 @@ def visible_vertices(point, graph, origin=None, destination=None, scan='full'):
     open_edges = OpenEdges()
     point_inf = Point(INF, point.y)
     for edge in edges:
-        if point in edge: continue
+        if point in edge:
+            continue
         if edge_intersect(point, point_inf, edge):
-            if on_segment(point, edge.p1, point_inf): continue
-            if on_segment(point, edge.p2, point_inf): continue
+            if on_segment(point, edge.p1, point_inf):
+                continue
+            if on_segment(point, edge.p2, point_inf):
+                continue
             open_edges.insert(point, point_inf, edge)
 
     visible = []
     prev = None
     prev_visible = None
     for p in points:
-        if p == point: continue
-        if scan == 'half' and angle(point, p) > pi: break
+        if p == point:
+            continue
+        if scan == "half" and angle(point, p) > pi:
+            break
 
         # Update open_edges - remove clock wise edges incident on p
         if open_edges:
@@ -77,7 +86,11 @@ def visible_vertices(point, graph, origin=None, destination=None, scan='full'):
         # Check if p is visible from point
         is_visible = False
         # ...Non-collinear points
-        if prev is None or ccw(point, prev, p) != COLLINEAR or not on_segment(point, prev, p):
+        if (
+            prev is None
+            or ccw(point, prev, p) != COLLINEAR
+            or not on_segment(point, prev, p)
+        ):
             if len(open_edges) == 0:
                 is_visible = True
             elif not edge_intersect(point, p, open_edges.smallest()):
@@ -88,19 +101,40 @@ def visible_vertices(point, graph, origin=None, destination=None, scan='full'):
         # ...For collinear points, if previous point was visible, need to check
         # that the edge from prev to p does not intersect any open edge.
         else:
-            is_visible = True
-            for edge in open_edges:
-                if prev not in edge and edge_intersect(prev, p, edge):
-                    is_visible = False
-                    break
-            if is_visible and edge_in_polygon(prev, p, graph):
-                    is_visible = False
+        #TODO: need to add this back, colinear points on wall has problem
+            is_visible = False  # The further points on the same line is invisible
+            # is_visible = True
+            # for edge in open_edges:
+            #     if prev not in edge and edge_intersect(prev, p, edge):
+            #         is_visible = False
+            #         break
+            # if is_visible and edge_in_polygon(prev, p, graph):
+            #         is_visible = False
 
         # Check if the visible edge is interior to its polygon
         if is_visible and p not in graph.get_adjacent_points(point):
             is_visible = not edge_in_polygon(point, p, graph)
 
-        if is_visible: visible.append(p)
+        if is_visible:
+            sides = []
+            for edge in graph[p]:
+                sides.append(ccw(point, p, edge.get_adjacent(p)))
+            if len(sides) != 2:
+                raise Exception("len(edges)!=2")
+            if sides[0] != sides[1]:
+                is_visible = False
+
+        if is_visible:
+            sides = []
+            for edge in graph[point]:
+                sides.append(ccw(p, point, edge.get_adjacent(point)))
+            if len(sides) != 2:
+                raise Exception("len(edges)!=2")
+            if sides[0] != sides[1]:
+                is_visible = False
+
+        if is_visible:
+            visible.append(p)
 
         # Update open_edges - Add counter clock wise edges incident on p
         for edge in graph[p]:
@@ -111,6 +145,24 @@ def visible_vertices(point, graph, origin=None, destination=None, scan='full'):
         prev_visible = is_visible
     return visible
 
+def convex_chain(graph):
+    conv_chain=[]
+    points = graph.get_points()
+    for p in points:
+        p_n = graph.get_next_point(p)
+        p_p = graph.get_prev_point(p)
+        if not p_n or not p_p:
+            raise Exception(f"point {p} has no prev or next point")
+        if ccw(p_p,p,p_n) == CW:
+            conv_chain.append(p)
+    return conv_chain
+    
+
+    
+
+
+
+
 
 def polygon_crossing(p1, poly_edges):
     """Returns True if Point p1 is internal to the polygon. The polygon is
@@ -119,13 +171,17 @@ def polygon_crossing(p1, poly_edges):
     p2 = Point(INF, p1.y)
     intersect_count = 0
     for edge in poly_edges:
-        if p1.y < edge.p1.y and p1.y < edge.p2.y: continue
-        if p1.y > edge.p1.y and p1.y > edge.p2.y: continue
-        if p1.x > edge.p1.x and p1.x > edge.p2.x: continue
+        if p1.y < edge.p1.y and p1.y < edge.p2.y:
+            continue
+        if p1.y > edge.p1.y and p1.y > edge.p2.y:
+            continue
+        if p1.x > edge.p1.x and p1.x > edge.p2.x:
+            continue
         # Deal with points collinear to p1
-        edge_p1_collinear = (ccw(p1, edge.p1, p2) == COLLINEAR)
-        edge_p2_collinear = (ccw(p1, edge.p2, p2) == COLLINEAR)
-        if edge_p1_collinear and edge_p2_collinear: continue
+        edge_p1_collinear = ccw(p1, edge.p1, p2) == COLLINEAR
+        edge_p2_collinear = ccw(p1, edge.p2, p2) == COLLINEAR
+        if edge_p1_collinear and edge_p2_collinear:
+            continue
         if edge_p1_collinear or edge_p2_collinear:
             collinear_point = edge.p1 if edge_p1_collinear else edge.p2
             if edge.get_adjacent(collinear_point).y > p1.y:
@@ -144,9 +200,9 @@ def edge_in_polygon(p1, p2, graph):
         return False
     if p1.polygon_id == -1 or p2.polygon_id == -1:
         return False
-    
+
     mid_point = Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
-    if p1.polygon_id == 0 and  p2.polygon_id == 0:
+    if p1.polygon_id == 0 and p2.polygon_id == 0:
         return not polygon_crossing(mid_point, graph.polygons[p1.polygon_id])
     else:
         return polygon_crossing(mid_point, graph.polygons[p1.polygon_id])
@@ -159,6 +215,7 @@ def point_in_polygon(p, graph):
             return polygon
     return -1
 
+
 def point_in_wall(p, graph):
     """Return true if the point p is interior to polygon 0 (wall) in graph."""
     if polygon_crossing(p, graph.polygons[0]):
@@ -166,8 +223,9 @@ def point_in_wall(p, graph):
     else:
         return False
 
+
 def point_valid(p, graph):
-    """Return true if the point p is interior to polygon 0 (wall) and not interior to other polygons."""    
+    """Return true if the point p is interior to polygon 0 (wall) and not interior to other polygons."""
     for polygon in graph.polygons:
         if polygon == 0:
             if not polygon_crossing(p, graph.polygons[0]):
@@ -175,6 +233,7 @@ def point_valid(p, graph):
         elif polygon_crossing(p, graph.polygons[polygon]):
             return False
     return True
+
 
 def unit_vector(c, p):
     magnitude = edge_distance(c, p)
@@ -192,10 +251,10 @@ def closest_point(p, graph, polygon_id, length=0.001):
     # Finds point closest to p, but on a edge of the polygon.
     # Solution from http://stackoverflow.com/a/6177788/4896361
     for i, e in enumerate(polygon_edges):
-        num = ((p.x-e.p1.x)*(e.p2.x-e.p1.x) + (p.y-e.p1.y)*(e.p2.y-e.p1.y))
-        denom = ((e.p2.x - e.p1.x)**2 + (e.p2.y - e.p1.y)**2)
-        u = num/denom
-        pu = Point(e.p1.x + u*(e.p2.x - e.p1.x), e.p1.y + u*(e.p2.y- e.p1.y))
+        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + (p.y - e.p1.y) * (e.p2.y - e.p1.y)
+        denom = (e.p2.x - e.p1.x) ** 2 + (e.p2.y - e.p1.y) ** 2
+        u = num / denom
+        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x), e.p1.y + u * (e.p2.y - e.p1.y))
         pc = pu
         if u < 0:
             pc = e.p1
@@ -221,18 +280,20 @@ def closest_point(p, graph, polygon_id, length=0.001):
         return close2
     else:
         v = unit_vector(p, close_point)
-        return Point(close_point.x + v.x*length, close_point.y + v.y*length)
+        return Point(close_point.x + v.x * length, close_point.y + v.y * length)
 
 
 def edge_distance(p1, p2):
     """Return the Euclidean distance between two Points."""
-    return sqrt((p2.x - p1.x)**2 + (p2.y - p1.y)**2)
+    return sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2)
 
 
 def intersect_point(p1, p2, edge):
     """Return intersect Point where the edge from p1, p2 intersects edge"""
-    if p1 in edge: return p1
-    if p2 in edge: return p2
+    if p1 in edge:
+        return p1
+    if p2 in edge:
+        return p2
     if edge.p1.x == edge.p2.x:
         if p1.x == p2.x:
             return None
@@ -251,7 +312,9 @@ def intersect_point(p1, p2, edge):
     eslope = (edge.p1.y - edge.p2.y) / (edge.p1.x - edge.p2.x)
     if eslope == pslope:
         return None
-    intersect_x = (eslope * edge.p1.x - pslope * p1.x + p1.y - edge.p1.y) / (eslope - pslope)
+    intersect_x = (eslope * edge.p1.x - pslope * p1.x + p1.y - edge.p1.y) / (
+        eslope - pslope
+    )
     intersect_y = eslope * (intersect_x - edge.p1.x) + edge.p1.y
     return Point(intersect_x, intersect_y)
 
@@ -296,19 +359,21 @@ def angle2(point_a, point_b, point_c):
        /    B\
       a-------b
     """
-    a = (point_c.x - point_b.x)**2 + (point_c.y - point_b.y)**2
-    b = (point_c.x - point_a.x)**2 + (point_c.y - point_a.y)**2
-    c = (point_b.x - point_a.x)**2 + (point_b.y - point_a.y)**2
+    a = (point_c.x - point_b.x) ** 2 + (point_c.y - point_b.y) ** 2
+    b = (point_c.x - point_a.x) ** 2 + (point_c.y - point_a.y) ** 2
+    c = (point_b.x - point_a.x) ** 2 + (point_b.y - point_a.y) ** 2
     cos_value = (a + c - b) / (2 * sqrt(a) * sqrt(c))
-    return acos(int(cos_value*T)/T2)
+    return acos(int(cos_value * T) / T2)
 
 
 def ccw(A, B, C):
-    """Return 1 if counter clockwise, -1 if clock wise, 0 if collinear """
+    """Return 1 if counter clockwise, -1 if clock wise, 0 if collinear"""
     #  Rounding this way is faster than calling round()
-    area = int(((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x))*T)/T2
-    if area > 0: return 1
-    if area < 0: return -1
+    area = int(((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x)) * T) / T2
+    if area > 0:
+        return 1
+    if area < 0:
+        return -1
     return 0
 
 
@@ -332,7 +397,7 @@ def edge_intersect(p1, q1, edge):
     o4 = ccw(p2, q2, q1)
 
     # General case
-    if (o1 != o2 and o3 != o4):
+    if o1 != o2 and o3 != o4:
         return True
     # p1, q1 and p2 are colinear and p2 lies on segment p1q1
     if o1 == COLLINEAR and on_segment(p1, p2, q1):
@@ -392,7 +457,7 @@ class OpenEdges(object):
         lo = 0
         hi = len(self._open_edges)
         while lo < hi:
-            mid = (lo+hi)//2
+            mid = (lo + hi) // 2
             if self._less_than(p1, p2, edge, self._open_edges[mid]):
                 hi = mid
             else:

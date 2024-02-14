@@ -63,12 +63,11 @@ class Point(object):
 
 
 class Edge(object):
-    __slots__ = ("p1", "p2", "dir")
+    __slots__ = ("p1", "p2")
 
     def __init__(self, point1, point2):
         self.p1 = point1
         self.p2 = point2
-        self.dir = 1  # 1: p1->p2 is clockwise, interior of the polygon is on the right side, -1 otherwise
 
     def get_adjacent(self, point):
         if point == self.p1:
@@ -77,6 +76,11 @@ class Edge(object):
 
     def length(self):
         return sqrt((self.p2.x - self.p1.x) ** 2 + (self.p2.y - self.p1.y) ** 2)
+    
+    def flip(self):
+        p = self.p1
+        self.p1 = self.p2
+        self.p2 = p
 
     def __contains__(self, point):
         return self.p1 == point or self.p2 == point

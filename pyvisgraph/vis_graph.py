@@ -29,7 +29,7 @@ from warnings import warn
 
 from pyvisgraph.graph import Graph, Edge
 from pyvisgraph.shortest_path import shortest_path
-from pyvisgraph.visible_vertices import visible_vertices, point_in_polygon, point_in_wall, point_valid
+from pyvisgraph.visible_vertices import visible_vertices, point_in_polygon, point_in_wall, point_valid, convex_chain
 from pyvisgraph.visible_vertices import closest_point
 
 PYTHON3 = version_info[0] == 3
@@ -45,7 +45,7 @@ class VisGraph(object):
     def __init__(self):
         self.graph = None
         self.visgraph = None
-        self.cov_chains = None
+        self.conv_chains = None
 
     def load(self, filename):
         """Load obstacle graph and visibility graph. """
@@ -72,6 +72,7 @@ class VisGraph(object):
         self.input = input # copy of input to save the raw polygon info
         self.graph = Graph(input)
         self.visgraph = Graph([])
+        # self.conv_chains = Graph([])
 
         points = self.graph.get_points()
         batch_size = 10
@@ -82,6 +83,7 @@ class VisGraph(object):
                               disable=not status):
                 for edge in _vis_graph(self.graph, batch):
                     self.visgraph.add_edge(edge)
+            self.conv_chains = _conv_chain(self.graph)
         else:
             pool = Pool(workers)
             batches = [(self.graph, points[i:i + batch_size])
@@ -166,3 +168,6 @@ def _vis_graph(graph, points):
         for p2 in visible_vertices(p1, graph, scan='half'):
             visible_edges.append(Edge(p1, p2))
     return visible_edges
+
+def _conv_chain(graph):
+    return convex_chain(graph)

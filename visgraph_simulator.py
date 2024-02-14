@@ -61,11 +61,16 @@ def draw_polygon(polygon, color, size, complete=True):
             p1 = p2
 
 
-def draw_visible_vertices(edges, color, size):
+def draw_vis_edges(edges, color, size):
     for edge in edges:
         pygame.draw.line(
             gameDisplay, color, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
         )
+
+
+def draw_conv_vertices(points, color, size):
+    for p in points:
+        pygame.draw.circle(gameDisplay, color, (p.x, p.y), size)
 
 
 def draw_visible_mouse_vertices(pos, points, color, size):
@@ -204,7 +209,9 @@ class Simulator:
             # Use the current time as the file name
             # Format the time as a string suitable for a file name
             file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.vis_graph.save(os.path.join("environments",file_name))  # Check if the input is empty
+        self.vis_graph.save(
+            os.path.join("environments", file_name)
+        )  # Check if the input is empty
         print(f"File saved: {file_name}")
 
     def load_map(self):
@@ -268,6 +275,7 @@ def game_loop():
                     if event.button == LEFT:
                         if len(sim.polygons) > 0:
                             if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
+                                print(f"({pos[0]}, {pos[1]})")
                                 sim.work_polygon.append(vg.Point(pos[0], pos[1]))
                         else:
                             sim.work_polygon.append(vg.Point(pos[0], pos[1]))
@@ -307,7 +315,8 @@ def game_loop():
                     draw_polygon(polygon, black, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_visible_vertices(sim.vis_graph.visgraph.get_edges(), gray, 1)
+            draw_vis_edges(sim.vis_graph.visgraph.get_edges(), red, 4)
+            draw_conv_vertices(sim.vis_graph.conv_chains, green, 4)
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)

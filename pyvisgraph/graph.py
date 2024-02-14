@@ -53,9 +53,9 @@ class Graph(object):
         self.edges = set()
         self.polygons = defaultdict(set)
         pid = 0
+        print("================================================")
         for polygon in polygons:
-
-            if polygon[0] == polygon[-1] and len(polygon) > 1:
+            while polygon[0] == polygon[-1] and len(polygon) > 1:
                 polygon.pop()
             # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
             current_edges = []
@@ -74,14 +74,36 @@ class Graph(object):
             dir = [dir[1],-dir[0]] # The y axis is after x axis in pygame, thus this rotation in counterclockwise 90deg.
             test_point = mid_point + Point.from_vec(dir)
             if polygon_crossing(test_point,current_edges):
+                print("CounterClockwise")
                 for edge in current_edges:
-                    edge.dir = -1
-            
+                    edge.flip()
+            else:
+                print("Clockwise")
+
+            # For the first polygon, which is the wall, the edge direction is flip as the exterior is the boundary side
+            if polygon == 0:
+                for edge in current_edges:
+                    edge.flip()
+
             if len(polygon) > 2:
                 pid += 1
 
     def get_adjacent_points(self, point):
         return [edge.get_adjacent(point) for edge in self[point]]
+    
+    def get_next_point(self, point):
+        edges = self[point]
+        for edge in edges:
+            if point == edge.p1:
+                return edge.p2
+        return None
+    
+    def get_prev_point(self, point):
+        edges = self[point]
+        for edge in edges:
+            if point == edge.p2:
+                return edge.p1
+        return None
 
     def get_points(self):
         return list(self.graph)

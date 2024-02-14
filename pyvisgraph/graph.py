@@ -76,12 +76,16 @@ class Graph(object):
             if polygon_crossing(test_point,current_edges):
                 print("CounterClockwise")
                 for edge in current_edges:
+                    print(f"{edge.p1},{edge.p2}")
                     edge.flip()
+                    print(f"{edge.p1},{edge.p2}")
             else:
                 print("Clockwise")
 
             # For the first polygon, which is the wall, the edge direction is flip as the exterior is the boundary side
-            if polygon == 0:
+            print(polygon)
+            if pid == 0:
+                print("WALL")
                 for edge in current_edges:
                     edge.flip()
 

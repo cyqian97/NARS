@@ -153,10 +153,10 @@ def convex_chain(graph):
         p_p = graph.get_prev_point(p)
         if not p_n or not p_p:
             raise Exception(f"point {p} has no prev or next point")
-        if ccw(p_p,p,p_n) == CW:
+        if ccw(p_p,p,p_n) == CCW:
             conv_chain.append(p)
     return conv_chain
-    
+    #TODO: also add edges between them, make it a graph that can be traverse
 
     
 

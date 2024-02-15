@@ -203,22 +203,22 @@ def edge_in_polygon(p1, p2, graph):
 
     mid_point = Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
     if p1.polygon_id == 0 and p2.polygon_id == 0:
-        return not polygon_crossing(mid_point, graph.polygons[p1.polygon_id])
+        return not polygon_crossing(mid_point, graph.polygon_edges[p1.polygon_id])
     else:
-        return polygon_crossing(mid_point, graph.polygons[p1.polygon_id])
+        return polygon_crossing(mid_point, graph.polygon_edges[p1.polygon_id])
 
 
 def point_in_polygon(p, graph):
     """Return true if the point p is interior to any polygon in graph."""
-    for polygon in graph.polygons:
-        if polygon_crossing(p, graph.polygons[polygon]):
+    for polygon in graph.polygon_edges:
+        if polygon_crossing(p, graph.polygon_edges[polygon]):
             return polygon
     return -1
 
 
 def point_in_wall(p, graph):
     """Return true if the point p is interior to polygon 0 (wall) in graph."""
-    if polygon_crossing(p, graph.polygons[0]):
+    if polygon_crossing(p, graph.polygon_edges[0]):
         return True
     else:
         return False
@@ -226,11 +226,11 @@ def point_in_wall(p, graph):
 
 def point_valid(p, graph):
     """Return true if the point p is interior to polygon 0 (wall) and not interior to other polygons."""
-    for polygon in graph.polygons:
+    for polygon in graph.polygon_edges:
         if polygon == 0:
-            if not polygon_crossing(p, graph.polygons[0]):
+            if not polygon_crossing(p, graph.polygon_edges[0]):
                 return False
-        elif polygon_crossing(p, graph.polygons[polygon]):
+        elif polygon_crossing(p, graph.polygon_edges[polygon]):
             return False
     return True
 
@@ -244,7 +244,7 @@ def closest_point(p, graph, polygon_id, length=0.001):
     """Assumes p is interior to the polygon with polygon_id. Returns the
     closest point c outside the polygon to p, where the distance from c to
     the intersect point from p to the edge of the polygon is length."""
-    polygon_edges = graph.polygons[polygon_id]
+    polygon_edges = graph.polygon_edges[polygon_id]
     close_point = None
     close_edge = None
     close_dist = None

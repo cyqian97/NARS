@@ -51,9 +51,9 @@ class Graph(object):
     def __init__(self, polygons):
         self.graph = defaultdict(set)
         self.edges = set()
-        self.polygons = defaultdict(set)
+        self.polygon_edges = defaultdict(set)
+        self.polygon_vertices = defaultdict(set)
         pid = 0
-        print("================================================")
         for polygon in polygons:
             while polygon[0] == polygon[-1] and len(polygon) > 1:
                 polygon.pop()
@@ -65,7 +65,8 @@ class Graph(object):
                 if len(polygon) > 2:
                     point.polygon_id = pid
                     sibling_point.polygon_id = pid
-                    self.polygons[pid].add(edge)
+                    self.polygon_edges[pid].add(edge)
+                    self.polygon_vertices[pid].add(point)
                     current_edges.append(edge)
                 self.add_edge(edge)
                 
@@ -74,18 +75,14 @@ class Graph(object):
             dir = [dir[1],-dir[0]] # The y axis is after x axis in pygame, thus this rotation in counterclockwise 90deg.
             test_point = mid_point + Point.from_vec(dir)
             if polygon_crossing(test_point,current_edges):
-                print("CounterClockwise")
+                # print("CounterClockwise")
                 for edge in current_edges:
-                    print(f"{edge.p1},{edge.p2}")
                     edge.flip()
-                    print(f"{edge.p1},{edge.p2}")
-            else:
-                print("Clockwise")
+            # else:
+            #     print("Clockwise")
 
             # For the first polygon, which is the wall, the edge direction is flip as the exterior is the boundary side
-            print(polygon)
             if pid == 0:
-                print("WALL")
                 for edge in current_edges:
                     edge.flip()
 

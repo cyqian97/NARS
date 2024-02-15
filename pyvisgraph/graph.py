@@ -30,7 +30,6 @@ from pyvisgraph.visible_vertices import polygon_crossing
 eps = 0.01
 
 
-
 class Graph(object):
     """
     A Graph is represented by a dict where the keys are Points in the Graph
@@ -52,7 +51,7 @@ class Graph(object):
         self.graph = defaultdict(set)
         self.edges = set()
         self.polygon_edges = defaultdict(set)
-        self.polygon_vertices = defaultdict(set)
+        self.polygon_vertices = defaultdict(list)
         pid = 0
         for polygon in polygons:
             while polygon[0] == polygon[-1] and len(polygon) > 1:
@@ -66,15 +65,22 @@ class Graph(object):
                     point.polygon_id = pid
                     sibling_point.polygon_id = pid
                     self.polygon_edges[pid].add(edge)
-                    self.polygon_vertices[pid].add(point)
+                    self.polygon_vertices[pid].append(point)
                     current_edges.append(edge)
                 self.add_edge(edge)
-                
-            mid_point =(current_edges[0].p1+current_edges[0].p2)/2
-            dir = eps*(current_edges[0].p2-current_edges[0].p1).to_vec()/current_edges[0].length()
-            dir = [dir[1],-dir[0]] # The y axis is after x axis in pygame, thus this rotation in counterclockwise 90deg.
+
+            mid_point = (current_edges[0].p1 + current_edges[0].p2) / 2
+            dir = (
+                eps
+                * (current_edges[0].p2 - current_edges[0].p1).to_vec()
+                / current_edges[0].length()
+            )
+            dir = [
+                dir[1],
+                -dir[0],
+            ]  # The y axis is after x axis in pygame, thus this rotation in counterclockwise 90deg.
             test_point = mid_point + Point.from_vec(dir)
-            if polygon_crossing(test_point,current_edges):
+            if polygon_crossing(test_point, current_edges):
                 # print("CounterClockwise")
                 for edge in current_edges:
                     edge.flip()
@@ -91,14 +97,14 @@ class Graph(object):
 
     def get_adjacent_points(self, point):
         return [edge.get_adjacent(point) for edge in self[point]]
-    
+
     def get_next_point(self, point):
         edges = self[point]
         for edge in edges:
             if point == edge.p1:
                 return edge.p2
         return None
-    
+
     def get_prev_point(self, point):
         edges = self[point]
         for edge in edges:
@@ -117,6 +123,9 @@ class Graph(object):
         self.graph[edge.p2].add(edge)
         self.edges.add(edge)
 
+    def add_point(self,point):
+        self.graph[point] = set()
+
     def __contains__(self, item):
         if isinstance(item, Point):
             return item in self.graph
@@ -124,9 +133,13 @@ class Graph(object):
             return item in self.edges
         return False
 
-    def __getitem__(self, point):
-        if point in self.graph:
-            return self.graph[point]
+    def __getitem__(self, p):
+        if isinstance(p,Point):
+            if p in self.graph:
+                return self.graph[p]
+        else:
+            if p[0] in self.graph and p[1] in self.graph:
+                return self.graph[p[0]].intersection(self.graph[p[1]])
         return set()
 
     def __str__(self):

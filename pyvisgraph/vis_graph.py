@@ -72,7 +72,7 @@ class VisGraph(object):
         self.input = input # copy of input to save the raw polygon info
         self.graph = Graph(input)
         self.visgraph = Graph([])
-        # self.conv_chains = Graph([])
+        self.conv_chains = Graph([])
 
         points = self.graph.get_points()
         batch_size = 10
@@ -83,7 +83,7 @@ class VisGraph(object):
                               disable=not status):
                 for edge in _vis_graph(self.graph, batch):
                     self.visgraph.add_edge(edge)
-            self.conv_chains = _conv_chain(self.graph)
+            _conv_chain(self.graph, self.conv_chains)
         else:
             pool = Pool(workers)
             batches = [(self.graph, points[i:i + batch_size])
@@ -169,5 +169,5 @@ def _vis_graph(graph, points):
             visible_edges.append(Edge(p1, p2))
     return visible_edges
 
-def _conv_chain(graph):
-    return convex_chain(graph)
+def _conv_chain(graph, conv_chain):
+    convex_chain(graph, conv_chain)

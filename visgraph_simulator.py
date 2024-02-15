@@ -61,14 +61,14 @@ def draw_polygon(polygon, color, size, complete=True):
             p1 = p2
 
 
-def draw_vis_edges(edges, color, size):
+def draw_edges(edges, color, size):
     for edge in edges:
         pygame.draw.line(
             gameDisplay, color, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
         )
 
 
-def draw_conv_vertices(points, color, size):
+def draw_vertices(points, color, size):
     for p in points:
         pygame.draw.circle(gameDisplay, color, (p.x, p.y), size)
 
@@ -315,8 +315,9 @@ def game_loop():
                     draw_polygon(polygon, black, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_vis_edges(sim.vis_graph.visgraph.get_edges(), red, 4)
-            draw_conv_vertices(sim.vis_graph.conv_chains, green, 4)
+            draw_edges(sim.vis_graph.visgraph.get_edges(), red, 3)
+            draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 5)
+            draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 3)
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)

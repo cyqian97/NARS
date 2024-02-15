@@ -24,7 +24,7 @@ SOFTWARE.
 
 from __future__ import division
 from math import pi, sqrt, atan, acos
-from pyvisgraph.classes import Point
+from pyvisgraph.classes import Point, Edge
 
 INF = 10000
 CCW = 1
@@ -145,17 +145,32 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
         prev_visible = is_visible
     return visible
 
-def convex_chain(graph):
-    conv_chain=[]
-    points = graph.get_points()
-    for p in points:
-        p_n = graph.get_next_point(p)
-        p_p = graph.get_prev_point(p)
+def convex_chain(graph, conv_chain):
+    
+    for pid, polygon in graph.polygon_vertices.items():
+        is_prev_conv = False
+        prev_point = polygon[-1]
+        p_n = graph.get_next_point(prev_point)
+        p_p = graph.get_prev_point(prev_point)
         if not p_n or not p_p:
-            raise Exception(f"point {p} has no prev or next point")
-        if ccw(p_p,p,p_n) == CCW:
-            conv_chain.append(p)
-    return conv_chain
+            raise Exception(f"point {prev_point} has no prev or next point")
+        if ccw(p_p,prev_point,p_n) == CCW:
+            is_prev_conv = True
+
+        for p in polygon:
+            p_n = graph.get_next_point(p)
+            p_p = graph.get_prev_point(p)
+            if not p_n or not p_p:
+                raise Exception(f"point {p} has no prev or next point")
+            if ccw(p_p,p,p_n) == CCW:
+                conv_chain.add_point(p)
+                if is_prev_conv:
+                    conv_chain.add_edge(list(graph[prev_point,p])[0])
+                is_prev_conv = True
+            else:
+                is_prev_conv = False
+            prev_point = p
+            
     #TODO: also add edges between them, make it a graph that can be traverse
 
     

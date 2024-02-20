@@ -115,6 +115,7 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
         if is_visible and p not in graph.get_adjacent_points(point):
             is_visible = not edge_in_polygon(point, p, graph)
 
+        # Check the two ends of a bitangent line, the two edges on each side should be on the same side of the line
         if is_visible:
             sides = []
             for edge in graph[p]:
@@ -126,12 +127,13 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
 
         if is_visible:
             sides = []
-            for edge in graph[point]:
-                sides.append(ccw(p, point, edge.get_adjacent(point)))
-            if len(sides) != 2:
-                raise Exception("len(edges)!=2")
-            if sides[0] != sides[1]:
-                is_visible = False
+            if graph[point]:
+                for edge in graph[point]:
+                    sides.append(ccw(p, point, edge.get_adjacent(point)))
+                if len(sides) != 2:
+                    raise Exception("len(edges)!=2")
+                if sides[0] != sides[1]:
+                    is_visible = False
 
         if is_visible:
             visible.append(p)
@@ -172,7 +174,6 @@ def convex_chain(graph, conv_chain):
                 is_prev_conv = False
             prev_point = p
             p = p_n
-    
 
 
 def polygon_crossing(p1, poly_edges):

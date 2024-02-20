@@ -101,7 +101,7 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
         # ...For collinear points, if previous point was visible, need to check
         # that the edge from prev to p does not intersect any open edge.
         else:
-        #TODO: need to add this back, colinear points on wall has problem
+            # TODO: need to add this back, colinear points on wall has problem
             is_visible = False  # The further points on the same line is invisible
             # is_visible = True
             # for edge in open_edges:
@@ -145,6 +145,7 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
         prev_visible = is_visible
     return visible
 
+
 def convex_chain(graph, conv_chain):
     for pid, polygon in graph.polygon_vertices.items():
         is_prev_conv = False
@@ -153,7 +154,7 @@ def convex_chain(graph, conv_chain):
         p_p = graph.get_prev_point(prev_point)
         if not p_n or not p_p:
             raise Exception(f"point {prev_point} has no prev or next point")
-        if ccw(p_p,prev_point,p_n) == CCW:
+        if ccw(p_p, prev_point, p_n) == CCW:
             is_prev_conv = True
 
         p = polygon[0]
@@ -162,20 +163,16 @@ def convex_chain(graph, conv_chain):
             p_p = graph.get_prev_point(p)
             if not p_n or not p_p:
                 raise Exception(f"point {p} has no prev or next point")
-            if ccw(p_p,p,p_n) == CCW:
+            if ccw(p_p, p, p_n) == CCW:
                 conv_chain.add_point(p)
                 if is_prev_conv:
-                    conv_chain.add_edge(list(graph[prev_point,p])[0])
+                    conv_chain.add_edge(list(graph[prev_point, p])[0])
                 is_prev_conv = True
             else:
                 is_prev_conv = False
             prev_point = p
             p = p_n
-
     
-
-
-
 
 
 def polygon_crossing(p1, poly_edges):

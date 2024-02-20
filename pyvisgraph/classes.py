@@ -3,13 +3,12 @@ from numpy import array
 
 
 class Point(object):
-    __slots__ = ("x", "y", "polygon_id", "cov_chain_id")
+    __slots__ = ("x", "y", "polygon_id")
 
-    def __init__(self, x, y, polygon_id=-1, cov_chain_id=-1):
+    def __init__(self, x, y, polygon_id=-1):
         self.x = float(x)
         self.y = float(y)
         self.polygon_id = polygon_id
-        self.cov_chain_id = cov_chain_id
 
     @classmethod
     def from_vec(cls, vec):

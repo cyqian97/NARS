@@ -146,7 +146,6 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
     return visible
 
 def convex_chain(graph, conv_chain):
-    
     for pid, polygon in graph.polygon_vertices.items():
         is_prev_conv = False
         prev_point = polygon[-1]
@@ -157,7 +156,8 @@ def convex_chain(graph, conv_chain):
         if ccw(p_p,prev_point,p_n) == CCW:
             is_prev_conv = True
 
-        for p in polygon:
+        p = polygon[0]
+        for i in range(len(polygon)):
             p_n = graph.get_next_point(p)
             p_p = graph.get_prev_point(p)
             if not p_n or not p_p:
@@ -170,8 +170,7 @@ def convex_chain(graph, conv_chain):
             else:
                 is_prev_conv = False
             prev_point = p
-            
-    #TODO: also add edges between them, make it a graph that can be traverse
+            p = p_n
 
     
 

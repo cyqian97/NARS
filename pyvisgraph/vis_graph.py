@@ -50,12 +50,12 @@ class VisGraph(object):
     def load(self, filename):
         """Load obstacle graph and visibility graph. """
         with open(filename, 'rb') as load:
-            self.graph, self.visgraph, self.input = pickle.load(load)
+            self.graph, self.visgraph, self.input, self.conv_chains = pickle.load(load)
 
     def save(self, filename):
         """Save obstacle graph and visibility graph. """
         with open(filename, 'wb') as output:
-            pickle.dump((self.graph, self.visgraph, self.input), output, -1)
+            pickle.dump((self.graph, self.visgraph, self.input, self.conv_chains), output, -1)
 
     def build(self, input, workers=1, status=True):
         """Build visibility graph based on a list of polygons.

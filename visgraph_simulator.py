@@ -37,8 +37,11 @@ display_height = 900
 black = (0, 0, 0)
 white = (255, 255, 255)
 red = (237, 41, 57)
+darkred = (120, 0, 0)
+lightred = (255, 200, 200)
 gray = (169, 169, 169)
 green = (0, 128, 0)
+blue = (17, 0, 187)
 
 LEFT = 1
 RIGHT = 3
@@ -146,7 +149,13 @@ def help_screen():
         # draw_text("S - TOGGLE SHORTEST PATH MODE", black, 25, startxi+10, startyi+285)
         # draw_text("    Left click to set start point, right click to set end point.", black, 25, startxi+10, startyi+320)
         # draw_text("    Hold left/right mouse button down to drag start/end point.", black, 25, startxi+10, startyi+355)
-        draw_text("M - TOGGLE GAP VERTICES FROM MOUSE CURSOR", black, 25, startxi+10, startyi+390)
+        draw_text(
+            "M - TOGGLE GAP VERTICES FROM MOUSE CURSOR",
+            black,
+            25,
+            startxi + 10,
+            startyi + 390,
+        )
         # draw_text("G - TOGGLE POLYGON VISIBILITY GRAPH", black, 25, startxi+10, startyi+425)
         # draw_text("© Christian August Reksten-Monsen", black, 20, startxi+140, startyi+470)
 
@@ -233,6 +242,7 @@ class Simulator:
             print(f"Loading the latest file: {latest_file}")
             self.vis_graph.load(latest_file)
             self.polygons = self.vis_graph.input
+            self.vis_graph.build(self.polygons, status=False)
             self.built = True
         else:
             print("No files found matching the pattern.")
@@ -241,9 +251,10 @@ class Simulator:
 def game_loop():
     sim = Simulator()
     gameExit = False
+    
+    cursor_pos = None
 
     while not gameExit:
-
         # Event loop
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
@@ -282,6 +293,8 @@ def game_loop():
                     elif event.button == RIGHT:
                         sim.close_polygon()
 
+            if event.type == pygame.MOUSEMOTION:
+                cursor_pos = pos
             # if sim.mode_path and sim.built:
             #     if event.type == pygame.MOUSEBUTTONUP or any(
             #         pygame.mouse.get_pressed()
@@ -295,14 +308,22 @@ def game_loop():
             #                 sim.start_point, sim.end_point
             #             )
 
-            if sim.show_mouse_visgraph and sim.built:
-                if event.type == pygame.MOUSEMOTION:
-                    if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
-                        sim.mouse_point = vg.Point(pos[0], pos[1])
-                        sim.mouse_vertices = sim.vis_graph.find_visible(sim.mouse_point)
+            # if sim.show_mouse_visgraph and sim.built:
+            #     if event.type == pygame.MOUSEMOTION:
+            #         if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
+            #             sim.mouse_point = vg.Point(pos[0], pos[1])
+            #             sim.mouse_vertices = sim.vis_graph.find_visible(sim.mouse_point)
 
         # Display loop
         gameDisplay.fill(white)
+        if cursor_pos:
+            draw_text(
+                f"{cursor_pos[0]}, {cursor_pos[1]}",
+                black,
+                30,
+                10,
+                40,
+            )
 
         if len(sim.work_polygon) > 1:
             draw_polygon(sim.work_polygon, black, 3, complete=False)
@@ -316,7 +337,8 @@ def game_loop():
                     draw_polygon(polygon, black, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_edges(sim.vis_graph.visgraph.get_edges(), red, 3)
+            draw_edges(sim.vis_graph.bitcomp.get_edges(), red, 2)
+            # draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
             draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 5)
             draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 3)
 

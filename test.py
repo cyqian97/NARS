@@ -1,16 +1,5 @@
-class MyMultiIndexClass:
-    def __init__(self):
-        self.data = {'a': 1, 'b': 2, 'c': 3}
-    
-    def __getitem__(self, key1, key2=None):
-        print(key1)
-        print(key2)
-        if key2 is None:
-            return self.data[key1]
-        else:
-            # Example of handling two keys
-            return self.data[key1] + self.data[key2]
-
-obj = MyMultiIndexClass()
-print(obj['a'])  # Outputs: 1
-print(obj['a','b'])  # Outputs: 3 (1 + 2)
+x = {1: [2,3], 3: [4,5], 4: [3,7], 2: [1,0], 0: [0,6]}
+print(x)
+print(dict(sorted(x.items(), key=lambda item: item[1][0])))
+print(dict(sorted(x.items(), key=lambda item: item[1][1])))
+print(x[1])

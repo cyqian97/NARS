@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from timeit import default_timer
 from sys import stdout, version_info
 from multiprocessing import Pool
@@ -29,7 +30,16 @@ from warnings import warn
 
 from pyvisgraph.graph import Graph, Edge
 from pyvisgraph.shortest_path import shortest_path
-from pyvisgraph.visible_vertices import visible_vertices, point_in_polygon, point_in_wall, point_valid, convex_chain
+from pyvisgraph.visible_vertices import (
+    visible_vertices,
+    point_in_polygon,
+    point_in_wall,
+    point_valid,
+    convex_chain,
+    edge_distance,
+    intersect_point,
+    on_segment
+)
 from pyvisgraph.visible_vertices import closest_point
 
 PYTHON3 = version_info[0] == 3
@@ -46,16 +56,20 @@ class VisGraph(object):
         self.graph = None
         self.visgraph = None
         self.conv_chains = None
+        self.bitcomp = None
+        self.input = None
 
     def load(self, filename):
-        """Load obstacle graph and visibility graph. """
-        with open(filename, 'rb') as load:
-            self.graph, self.visgraph, self.input, self.conv_chains = pickle.load(load)
+        """Load obstacle graph and visibility graph."""
+        with open(filename, "rb") as load:
+            self.graph, self.visgraph, self.input, self.conv_chains, self.bitcomp = pickle.load(load)
 
     def save(self, filename):
-        """Save obstacle graph and visibility graph. """
-        with open(filename, 'wb') as output:
-            pickle.dump((self.graph, self.visgraph, self.input, self.conv_chains), output, -1)
+        """Save obstacle graph and visibility graph."""
+        with open(filename, "wb") as output:
+            pickle.dump(
+                (self.graph, self.visgraph, self.input, self.conv_chains, self.bitcomp), output, -1
+            )
 
     def build(self, input, workers=1, status=True):
         """Build visibility graph based on a list of polygons.
@@ -69,31 +83,82 @@ class VisGraph(object):
         will be started.
         Set status=False to turn off the statusbar when building.
         """
-        self.input = input # copy of input to save the raw polygon info
+        self.input = input  # copy of input to save the raw polygon info
         self.graph = Graph(input)
         self.visgraph = Graph([])
         self.conv_chains = Graph([])
+        self.bitcomp = Graph([])
 
         points = self.graph.get_points()
         batch_size = 10
 
         if workers == 1:
-            for batch in tqdm([points[i:i + batch_size]
-                               for i in xrange(0, len(points), batch_size)],
-                              disable=not status):
+            for batch in tqdm(
+                [
+                    points[i : i + batch_size]
+                    for i in xrange(0, len(points), batch_size)
+                ],
+                disable=not status,
+            ):
                 for edge in _vis_graph(self.graph, batch):
                     self.visgraph.add_edge(edge)
             _conv_chain(self.graph, self.conv_chains)
         else:
             pool = Pool(workers)
-            batches = [(self.graph, points[i:i + batch_size])
-                       for i in xrange(0, len(points), batch_size)]
+            batches = [
+                (self.graph, points[i : i + batch_size])
+                for i in xrange(0, len(points), batch_size)
+            ]
 
-            results = list(tqdm(pool.imap(_vis_graph_wrapper, batches), total=len(batches),
-                                disable=not status))
+            results = list(
+                tqdm(
+                    pool.imap(_vis_graph_wrapper, batches),
+                    total=len(batches),
+                    disable=not status,
+                )
+            )
             for result in results:
                 for edge in result:
                     self.visgraph.add_edge(edge)
+
+        # Calculate Bitangent Complement Lines
+        for bit_line in self.visgraph.get_edges():
+            print(bit_line)
+            p1 = bit_line.p1
+            p2 = bit_line.p2
+            p1_d_min = float('inf')
+            p1_p_min = None
+            p2_d_min = float('inf')
+            p2_p_min = None
+            p1_vec = (p2-p1).to_vec()
+            p2_vec = p1_vec * -1
+            for edge in self.graph.get_edges():
+                p = intersect_point(p1,p2,edge)
+                if p and p!=p1 and p!=p2 and on_segment(edge.p1,p,edge.p2):
+                    print(edge)
+                    print(p)
+                    if (p-p1).to_vec().dot(p1_vec) > 0:
+                        d = edge_distance(p,p1)
+                        if (d < p1_d_min):
+                            p1_d_min = d
+                            p1_p_min = p
+                    if (p-p2).to_vec().dot(p2_vec) > 0:
+                        d = edge_distance(p,p2)
+                        if (d < p2_d_min):
+                            p2_d_min = d
+                            p2_p_min = p
+            if p1_p_min:             
+                self.bitcomp.add_edge(Edge(bit_line.p1, p1_p_min))
+            else:
+                raise Exception("bitangent complement for p1 not found")
+            
+            if p2_p_min:             
+                self.bitcomp.add_edge(Edge(bit_line.p2, p2_p_min))
+            else:
+                raise Exception("bitangent complement for p2 not found")
+
+            # TODO: add side info
+
 
     def find_visible(self, point):
         """Find vertices visible from point."""
@@ -104,8 +169,9 @@ class VisGraph(object):
         """Update visgraph by checking visibility of Points in list points."""
 
         for p in points:
-            for v in visible_vertices(p, self.graph, origin=origin,
-                                      destination=destination):
+            for v in visible_vertices(
+                p, self.graph, origin=origin, destination=destination
+            ):
                 self.visgraph.add_edge(Edge(p, v))
 
     def shortest_path(self, origin, destination):
@@ -114,7 +180,7 @@ class VisGraph(object):
         Will return in-order list of Points of the shortest path found. If
         origin or destination are not in the visibility graph, their respective
         visibility edges will be found, but only kept temporarily for finding
-        the shortest path. 
+        the shortest path.
         """
 
         origin_exists = origin in self.visgraph
@@ -165,9 +231,10 @@ def _vis_graph_wrapper(args):
 def _vis_graph(graph, points):
     visible_edges = []
     for p1 in points:
-        for p2 in visible_vertices(p1, graph, scan='half'):
+        for p2 in visible_vertices(p1, graph, scan="half"):
             visible_edges.append(Edge(p1, p2))
     return visible_edges
+
 
 def _conv_chain(graph, conv_chain):
     convex_chain(graph, conv_chain)

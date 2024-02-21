@@ -38,7 +38,7 @@ black = (0, 0, 0)
 white = (255, 255, 255)
 red = (237, 41, 57)
 darkred = (120, 0, 0)
-lightred = (255, 200, 200)
+lightred = (255, 220, 220)
 gray = (169, 169, 169)
 green = (0, 128, 0)
 blue = (17, 0, 187)
@@ -308,11 +308,11 @@ def game_loop():
             #                 sim.start_point, sim.end_point
             #             )
 
-            # if sim.show_mouse_visgraph and sim.built:
-            #     if event.type == pygame.MOUSEMOTION:
-            #         if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
-            #             sim.mouse_point = vg.Point(pos[0], pos[1])
-            #             sim.mouse_vertices = sim.vis_graph.find_visible(sim.mouse_point)
+            if sim.show_mouse_visgraph and sim.built:
+                if event.type == pygame.MOUSEMOTION:
+                    if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
+                        sim.mouse_point = vg.Point(pos[0], pos[1])
+                        sim.mouse_vertices = sim.vis_graph.find_visible(sim.mouse_point)
 
         # Display loop
         gameDisplay.fill(white)
@@ -338,7 +338,7 @@ def game_loop():
 
         if sim.built and sim.show_static_visgraph:
             draw_edges(sim.vis_graph.bitcomp.get_edges(), red, 2)
-            # draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
+            draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
             draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 5)
             draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 3)
 

@@ -123,7 +123,7 @@ class VisGraph(object):
 
         # Calculate Bitangent Complement Lines
         for bit_line in self.visgraph.get_edges():
-            print(bit_line)
+            # print(bit_line)
             p1 = bit_line.p1
             p2 = bit_line.p2
             p1_d_min = float('inf')
@@ -135,14 +135,14 @@ class VisGraph(object):
             for edge in self.graph.get_edges():
                 p = intersect_point(p1,p2,edge)
                 if p and p!=p1 and p!=p2 and on_segment(edge.p1,p,edge.p2):
-                    print(edge)
-                    print(p)
-                    if (p-p1).to_vec().dot(p1_vec) > 0:
+                    # print(edge)
+                    # print(p)
+                    if (p-p1).to_vec().dot(p1_vec) < 0:
                         d = edge_distance(p,p1)
                         if (d < p1_d_min):
                             p1_d_min = d
                             p1_p_min = p
-                    if (p-p2).to_vec().dot(p2_vec) > 0:
+                    if (p-p2).to_vec().dot(p2_vec) < 0:
                         d = edge_distance(p,p2)
                         if (d < p2_d_min):
                             p2_d_min = d

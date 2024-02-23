@@ -38,7 +38,8 @@ from pyvisgraph.visible_vertices import (
     convex_chain,
     edge_distance,
     intersect_point,
-    on_segment
+    on_segment,
+    ccw
 )
 from pyvisgraph.visible_vertices import closest_point
 
@@ -147,13 +148,18 @@ class VisGraph(object):
                         if (d < p2_d_min):
                             p2_d_min = d
                             p2_p_min = p
-            if p1_p_min:             
-                self.bitcomp.add_edge(Edge(bit_line.p1, p1_p_min))
+            if p1_p_min:
+                edge = Edge(bit_line.p1, p1_p_min)
+                edge.side = ccw(p1_p_min,bit_line.p1,self.graph.get_next_point(bit_line.p1))
+                self.bitcomp.add_edge(edge)
+
             else:
                 raise Exception("bitangent complement for p1 not found")
             
-            if p2_p_min:             
-                self.bitcomp.add_edge(Edge(bit_line.p2, p2_p_min))
+            if p2_p_min:
+                edge = Edge(bit_line.p2, p2_p_min)
+                edge.side = ccw(p2_p_min,bit_line.p2,self.graph.get_next_point(bit_line.p2))
+                self.bitcomp.add_edge(edge)
             else:
                 raise Exception("bitangent complement for p2 not found")
 

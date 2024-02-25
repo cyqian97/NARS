@@ -28,7 +28,7 @@ from multiprocessing import Pool
 from tqdm import tqdm
 from warnings import warn
 
-from pyvisgraph.graph import Graph, Edge
+from pyvisgraph.graph import PolygonGraph, Edge
 from pyvisgraph.shortest_path import shortest_path
 from pyvisgraph.visible_vertices import (
     visible_vertices,
@@ -87,10 +87,10 @@ class VisGraph(object):
         Set status=False to turn off the statusbar when building.
         """
         self.input = input  # copy of input to save the raw polygon info
-        self.graph = Graph(input)
-        self.visgraph = Graph([])
-        self.conv_chains = Graph([])
-        self.bitcomp = Graph([])
+        self.graph = PolygonGraph(input)
+        self.visgraph = PolygonGraph([])
+        self.conv_chains = PolygonGraph([])
+        self.bitcomp = PolygonGraph([])
 
         points = self.graph.get_points()
         batch_size = 10
@@ -157,7 +157,7 @@ class VisGraph(object):
             return shortest_path(self.visgraph, origin, destination)
         orgn = None if origin_exists else origin
         dest = None if dest_exists else destination
-        add_to_visg = Graph([])
+        add_to_visg = PolygonGraph([])
         if not origin_exists:
             for v in visible_vertices(origin, self.graph, destination=dest):
                 add_to_visg.add_edge(Edge(origin, v))

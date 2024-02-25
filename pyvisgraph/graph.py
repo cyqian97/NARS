@@ -30,7 +30,7 @@ from pyvisgraph.visible_vertices import polygon_crossing
 eps = 0.01
 
 
-class Graph(object):
+class PolygonGraph(object):
     """
     A Graph is represented by a dict where the keys are Points in the Graph
     and the dict values are sets containing Edges incident on each Point.

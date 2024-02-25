@@ -36,6 +36,8 @@ from pyvisgraph.visible_vertices import (
     point_in_wall,
     point_valid,
     convex_chain,
+    bitangent_complement,
+    inflection_lines,
     edge_distance,
     intersect_point,
     on_segment,
@@ -104,6 +106,8 @@ class VisGraph(object):
                 for edge in _vis_graph(self.graph, batch):
                     self.visgraph.add_edge(edge)
             _conv_chain(self.graph, self.conv_chains)
+            _bit_comp(self.graph, self.visgraph, self.bitcomp)
+
         else:
             pool = Pool(workers)
             batches = [
@@ -122,49 +126,7 @@ class VisGraph(object):
                 for edge in result:
                     self.visgraph.add_edge(edge)
 
-        # Calculate Bitangent Complement Lines
-        for bit_line in self.visgraph.get_edges():
-            # print(bit_line)
-            p1 = bit_line.p1
-            p2 = bit_line.p2
-            p1_d_min = float('inf')
-            p1_p_min = None
-            p2_d_min = float('inf')
-            p2_p_min = None
-            p1_vec = (p2-p1).to_vec()
-            p2_vec = p1_vec * -1
-            for edge in self.graph.get_edges():
-                p = intersect_point(p1,p2,edge)
-                if p and p!=p1 and p!=p2 and on_segment(edge.p1,p,edge.p2):
-                    # print(edge)
-                    # print(p)
-                    if (p-p1).to_vec().dot(p1_vec) < 0:
-                        d = edge_distance(p,p1)
-                        if (d < p1_d_min):
-                            p1_d_min = d
-                            p1_p_min = p
-                    if (p-p2).to_vec().dot(p2_vec) < 0:
-                        d = edge_distance(p,p2)
-                        if (d < p2_d_min):
-                            p2_d_min = d
-                            p2_p_min = p
-            if p1_p_min:
-                edge = Edge(bit_line.p1, p1_p_min)
-                edge.side = ccw(p1_p_min,bit_line.p1,self.graph.get_next_point(bit_line.p1))
-                self.bitcomp.add_edge(edge)
-
-            else:
-                raise Exception("bitangent complement for p1 not found")
-            
-            if p2_p_min:
-                edge = Edge(bit_line.p2, p2_p_min)
-                edge.side = ccw(p2_p_min,bit_line.p2,self.graph.get_next_point(bit_line.p2))
-                self.bitcomp.add_edge(edge)
-            else:
-                raise Exception("bitangent complement for p2 not found")
-
-            # TODO: add side info
-
+    
 
     def find_visible(self, point):
         """Find vertices visible from point."""
@@ -244,3 +206,9 @@ def _vis_graph(graph, points):
 
 def _conv_chain(graph, conv_chain):
     convex_chain(graph, conv_chain)
+
+def _bit_comp(graph, visgraph, bitcomp):
+    bitangent_complement(graph, visgraph, bitcomp)
+
+def _inflx_lines(graph, conv_chain, inflx):
+    inflection_lines(graph, conv_chain, inflx)

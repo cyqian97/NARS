@@ -230,6 +230,10 @@ class Simulator:
             # Use the current time as the file name
             # Format the time as a string suitable for a file name
             file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        # Check if 'environments' is a folder under the current directory
+        if not os.path.isdir('environments'):
+            # Create 'environments' if it doesn't exist
+            os.makedirs('environments')
         self.vis_graph.save(
             os.path.join("environments", file_name)
         )  # Check if the input is empty

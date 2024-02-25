@@ -176,6 +176,54 @@ def convex_chain(graph, conv_chain):
             p = p_n
 
 
+def bitangent_complement(graph, visgraph, bitcomp):
+    # Calculate Bitangent Complement Lines
+    for bit_line in visgraph.get_edges():
+        # print(bit_line)
+        p1 = bit_line.p1
+        p2 = bit_line.p2
+        p1_d_min = float('inf')
+        p1_p_min = None
+        p2_d_min = float('inf')
+        p2_p_min = None
+        p1_vec = (p2-p1).to_vec()
+        p2_vec = p1_vec * -1
+        for edge in graph.get_edges():
+            p = intersect_point(p1, p2, edge)
+            if p and p != p1 and p != p2 and on_segment(edge.p1, p, edge.p2):
+                # print(edge)
+                # print(p)
+                if (p-p1).to_vec().dot(p1_vec) < 0:
+                    d = edge_distance(p, p1)
+                    if (d < p1_d_min):
+                        p1_d_min = d
+                        p1_p_min = p
+                if (p-p2).to_vec().dot(p2_vec) < 0:
+                    d = edge_distance(p, p2)
+                    if (d < p2_d_min):
+                        p2_d_min = d
+                        p2_p_min = p
+        if p1_p_min:
+            edge = Edge(bit_line.p1, p1_p_min)
+            edge.side = ccw(p1_p_min, bit_line.p1,
+                            graph.get_next_point(bit_line.p1))
+            bitcomp.add_edge(edge)
+
+        else:
+            raise Exception("bitangent complement for p1 not found")
+
+        if p2_p_min:
+            edge = Edge(bit_line.p2, p2_p_min)
+            edge.side = ccw(p2_p_min, bit_line.p2,
+                            graph.get_next_point(bit_line.p2))
+            bitcomp.add_edge(edge)
+        else:
+            raise Exception("bitangent complement for p2 not found")
+
+def inflection_lines(graph, conv_chain, inflx):
+    
+    return
+
 def polygon_crossing(p1, poly_edges):
     """Returns True if Point p1 is internal to the polygon. The polygon is
     defined by the Edges in poly_edges. Uses crossings algorithm and takes into
@@ -263,10 +311,12 @@ def closest_point(p, graph, polygon_id, length=0.001):
     # Finds point closest to p, but on a edge of the polygon.
     # Solution from http://stackoverflow.com/a/6177788/4896361
     for i, e in enumerate(polygon_edges):
-        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + (p.y - e.p1.y) * (e.p2.y - e.p1.y)
+        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + \
+            (p.y - e.p1.y) * (e.p2.y - e.p1.y)
         denom = (e.p2.x - e.p1.x) ** 2 + (e.p2.y - e.p1.y) ** 2
         u = num / denom
-        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x), e.p1.y + u * (e.p2.y - e.p1.y))
+        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x),
+                   e.p1.y + u * (e.p2.y - e.p1.y))
         pc = pu
         if u < 0:
             pc = e.p1

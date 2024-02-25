@@ -70,6 +70,18 @@ def draw_edges(edges, color, size):
             gameDisplay, color, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
         )
 
+def draw_edges_side(edges, color1, color2, size):
+    for edge in edges:
+        if edge.side == 1:
+            pygame.draw.line(
+                gameDisplay, color1, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
+            )
+        elif edge.side == -1:
+            pygame.draw.line(
+                gameDisplay, color2, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
+            )
+        else:
+            raise Exception(f"Edge side should be -1 or 1, not {edge.side}")
 
 def draw_vertices(points, color, size):
     for p in points:
@@ -337,7 +349,7 @@ def game_loop():
                     draw_polygon(polygon, black, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_edges(sim.vis_graph.bitcomp.get_edges(), red, 2)
+            draw_edges_side(sim.vis_graph.bitcomp.get_edges(), red,blue, 2)
             draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
             draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 5)
             draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 3)

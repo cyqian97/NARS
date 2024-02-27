@@ -36,7 +36,7 @@ COLIN_TOLERANCE = 10
 T = 10**COLIN_TOLERANCE
 T2 = 10.0**COLIN_TOLERANCE
 
-
+#TODO: change function name to bitangent_lines
 def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
     """Returns list of Points in graph visible by point.
 
@@ -149,9 +149,13 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
 
 
 def convex_chain(graph, conv_chain):
+    chain_id = 0
     for pid, polygon in graph.polygon_vertices.items():
+        chain_id_init = chain_id
         is_prev_conv = False
-        prev_point = polygon[-1]
+        
+        p = polygon[0]
+        prev_point = graph.get_prev_point(p)
         p_n = graph.get_next_point(prev_point)
         p_p = graph.get_prev_point(prev_point)
         if not p_n or not p_p:
@@ -159,22 +163,33 @@ def convex_chain(graph, conv_chain):
         if ccw(p_p, prev_point, p_n) == CCW:
             is_prev_conv = True
 
-        p = polygon[0]
+        chain_points = []
+        chain_edges = []
         for i in range(len(polygon)):
             p_n = graph.get_next_point(p)
             p_p = graph.get_prev_point(p)
             if not p_n or not p_p:
                 raise Exception(f"point {p} has no prev or next point")
             if ccw(p_p, p, p_n) == CCW:
-                conv_chain.add_point(p)
+                chain_points.append(p)
+                # conv_chain.add_point(p)
                 if is_prev_conv:
-                    conv_chain.add_edge(list(graph[prev_point, p])[0])
+                    chain_edges.append(list(graph[prev_point, p])[0])
+                    # conv_chain.add_edge(list(graph[prev_point, p])[0])
                 is_prev_conv = True
             else:
+                if is_prev_conv:
+                    conv_chain.new_chain(chain_id,chain_points,chain_edges)
+                    chain_points = []
+                    chain_edges = []
+                    chain_id+=1
                 is_prev_conv = False
             prev_point = p
-            p = p_n
-
+            p = p_n #TODO: maybe redundant
+        if chain_points:
+            conv_chain.add_or_new_chain(chain_id_init,chain_points,chain_edges)
+            chain_points = []
+            chain_edges = []
 
 def bitangent_complement(graph, visgraph, bitcomp):
     # Calculate Bitangent Complement Lines

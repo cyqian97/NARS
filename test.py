@@ -1,5 +1,16 @@
-x = {1: [2,3], 3: [4,5], 4: [3,7], 2: [1,0], 0: [0,6]}
-print(x)
-print(dict(sorted(x.items(), key=lambda item: item[1][0])))
-print(dict(sorted(x.items(), key=lambda item: item[1][1])))
-print(x[1])
+class test:
+    def __init__(self,x):
+        self.x = x     
+    def __eq__(self, t):
+        return t and self.x == t.x
+    
+
+    def __hash__(self):
+        return self.x.__hash__()
+
+a = test(1)
+d = {a:"a"}
+b = test(1)
+print(a==b)
+print(d[a])
+print(d[b])

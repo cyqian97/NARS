@@ -3,12 +3,13 @@ from numpy import array
 
 
 class Point(object):
-    __slots__ = ("x", "y", "polygon_id")
+    __slots__ = ("x", "y", "polygon_id","conv_chain_id")
 
     def __init__(self, x, y, polygon_id=-1):
         self.x = float(x)
         self.y = float(y)
         self.polygon_id = polygon_id
+        self.conv_chain_id = -1
 
     @classmethod
     def from_vec(cls, vec):
@@ -60,11 +61,13 @@ class Point(object):
     def __truediv__(self, num):
         return Point(self.x / num, self.y / num)
 
+
 LEFT = 1
 RIGHT = -1
 
+
 class Edge(object):
-    __slots__ = ("p1", "p2","side")
+    __slots__ = ("p1", "p2", "side")
 
     def __init__(self, point1, point2):
         self.p1 = point1
@@ -78,7 +81,7 @@ class Edge(object):
 
     def length(self):
         return sqrt((self.p2.x - self.p1.x) ** 2 + (self.p2.y - self.p1.y) ** 2)
-    
+
     def flip(self):
         p = self.p1
         self.p1 = self.p2
@@ -105,3 +108,22 @@ class Edge(object):
 
     def __hash__(self):
         return self.p1.__hash__() ^ self.p2.__hash__()
+
+
+
+class Chain():
+    __slots__ = ("chain_id", "start","end","vertices","edges")
+    def __init__(self,chain_id,vertices,edges):
+        assert isinstance(vertices,set), "vertices must be a set"
+        assert isinstance(edges,set), "edges must be a set"
+        self.chain_id = chain_id
+        self.start = None
+        self.end = None
+        self.vertices = vertices
+        self.edges = edges
+
+    def add_edges(self,edges):
+        self.edges.update(edges)
+
+    def add_points(self,vertices):
+        self.vertices.update(vertices)

@@ -28,7 +28,8 @@ from multiprocessing import Pool
 from tqdm import tqdm
 from warnings import warn
 
-from pyvisgraph.graph import PolygonGraph, Edge
+from pyvisgraph.classes import Edge
+from pyvisgraph.graph import PolygonGraph, ChainGraph
 from pyvisgraph.shortest_path import shortest_path
 from pyvisgraph.visible_vertices import (
     visible_vertices,
@@ -89,7 +90,7 @@ class VisGraph(object):
         self.input = input  # copy of input to save the raw polygon info
         self.graph = PolygonGraph(input)
         self.visgraph = PolygonGraph([])
-        self.conv_chains = PolygonGraph([])
+        self.conv_chains = ChainGraph()
         self.bitcomp = PolygonGraph([])
 
         points = self.graph.get_points()

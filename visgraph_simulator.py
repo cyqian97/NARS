@@ -225,7 +225,7 @@ class Simulator:
 
     def save_map(self):
         # Prompt the user for input
-        file_name = input("Enter file name: ")
+        file_name = "" #input("Enter file name: ")
         if not file_name:
             # Use the current time as the file name
             # Format the time as a string suitable for a file name
@@ -342,15 +342,15 @@ def game_loop():
             )
 
         if len(sim.work_polygon) > 1:
-            draw_polygon(sim.work_polygon, black, 3, complete=False)
+            draw_polygon(sim.work_polygon, gray, 3, complete=False)
 
         if len(sim.polygons) > 0:
             polygon = sim.polygons[0]
             polygon.append(polygon[0])
-            draw_polygon(polygon, black, 3, complete=False)
+            draw_polygon(polygon, gray, 3, complete=False)
             if len(sim.polygons) > 1:
                 for polygon in sim.polygons[1:]:
-                    draw_polygon(polygon, black, 3)
+                    draw_polygon(polygon, gray, 3)
 
         if sim.built and sim.show_static_visgraph:
             draw_edges_side(sim.vis_graph.bitcomp.get_edges(), red,blue, 2)
@@ -362,6 +362,8 @@ def game_loop():
                 if p: pygame.draw.circle(gameDisplay, green, (p.x, p.y), 6)
                 p = value.end
                 if p: pygame.draw.circle(gameDisplay, red, (p.x, p.y), 6)
+            draw_edges(sim.vis_graph.inflx.get_edges(), black, 2)
+            
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)

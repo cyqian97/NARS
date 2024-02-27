@@ -109,6 +109,7 @@ class VisGraph(object):
                     self.visgraph.add_edge(edge)
             _conv_chain(self.graph, self.conv_chains)
             _bit_comp(self.graph, self.visgraph, self.bitcomp)
+            _inflx_lines(self.graph,self.conv_chains,self.inflx)
 
         else:
             pool = Pool(workers)

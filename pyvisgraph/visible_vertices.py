@@ -36,7 +36,9 @@ COLIN_TOLERANCE = 10
 T = 10**COLIN_TOLERANCE
 T2 = 10.0**COLIN_TOLERANCE
 
-#TODO: change function name to bitangent_lines
+# TODO: change function name to bitangent_lines
+
+
 def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
     """Returns list of Points in graph visible by point.
 
@@ -153,7 +155,7 @@ def convex_chain(graph, conv_chain):
     for pid, polygon in graph.polygon_vertices.items():
         chain_id_init = chain_id
         is_prev_conv = False
-        
+
         p = polygon[0]
         prev_point = graph.get_prev_point(p)
         p_n = graph.get_next_point(prev_point)
@@ -179,17 +181,19 @@ def convex_chain(graph, conv_chain):
                 is_prev_conv = True
             else:
                 if is_prev_conv:
-                    conv_chain.new_chain(chain_id,chain_points,chain_edges)
+                    conv_chain.new_chain(chain_id, chain_points, chain_edges)
                     chain_points = []
                     chain_edges = []
-                    chain_id+=1
+                    chain_id += 1
                 is_prev_conv = False
             p = p_n
 
         if chain_points:
-            conv_chain.add_or_new_chain(chain_id_init,chain_points,chain_edges)
+            conv_chain.add_or_new_chain(
+                chain_id_init, chain_points, chain_edges)
             chain_points = []
             chain_edges = []
+
 
 def bitangent_complement(graph, visgraph, bitcomp):
     # Calculate Bitangent Complement Lines
@@ -235,9 +239,41 @@ def bitangent_complement(graph, visgraph, bitcomp):
         else:
             raise Exception("bitangent complement for p2 not found")
 
+
 def inflection_lines(graph, conv_chain, inflx):
-    
-    return
+
+    for chain_id, chain in conv_chain.chains.items():
+        if chain.start:
+            p_p = graph.get_prev_point(chain.start)
+            inflx.add_edge(ray_cast(p_p, chain.start, graph))
+
+            p_n = graph.get_next_point(chain.end)
+            inflx.add_edge(ray_cast(p_n, chain.end, graph))
+
+
+def ray_cast(p1, p2, graph):
+    """
+    extend an ray from p2 in the direction of p1->p2 until it hit an edge
+    """
+    p2_d_min = float('inf')
+    p2_p_min = None
+    p2_vec = (p2-p1).to_vec()
+    for edge in graph.get_edges():
+        p = intersect_point(p1, p2, edge)
+        if p and p != p1 and p != p2 and on_segment(edge.p1, p, edge.p2):
+            if (p-p2).to_vec().dot(p2_vec) > 0:
+                d = edge_distance(p, p2)
+                if (d < p2_d_min):
+                    p2_d_min = d
+                    p2_p_min = p
+    if p2_p_min:
+        edge = Edge(p2, p2_p_min)
+        edge.side = ccw(p2_p_min, p2,
+                        graph.get_next_point(p2))
+        return edge
+    else:
+        raise Exception("Cannot extend p1->p2")
+
 
 def polygon_crossing(p1, poly_edges):
     """Returns True if Point p1 is internal to the polygon. The polygon is
@@ -259,7 +295,7 @@ def polygon_crossing(p1, poly_edges):
             continue
         if edge_p1_collinear or edge_p2_collinear:
             collinear_point = edge.p1 if edge_p1_collinear else edge.p2
-            if edge.get_adjacent(collinear_point).y > p1.y:
+            if collinear_point.x > p1.x and edge.get_adjacent(collinear_point).y > p1.y:
                 intersect_count += 1
         elif edge_intersect(p1, p2, edge):
             intersect_count += 1

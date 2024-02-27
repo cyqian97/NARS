@@ -28,9 +28,6 @@ from pyvisgraph.classes import Point, Edge, Chain
 from pyvisgraph.visible_vertices import polygon_crossing
 
 eps = 0.01
-# TODO: create polygon and chain classes
-# TODO: inherit polygon graph and chain graph from graph
-
 
 class Graph(object):
     """

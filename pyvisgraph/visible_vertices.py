@@ -166,15 +166,15 @@ def convex_chain(graph, conv_chain):
         chain_points = []
         chain_edges = []
         for i in range(len(polygon)):
-            p_n = graph.get_next_point(p)
             p_p = graph.get_prev_point(p)
+            p_n = graph.get_next_point(p)
             if not p_n or not p_p:
                 raise Exception(f"point {p} has no prev or next point")
             if ccw(p_p, p, p_n) == CCW:
                 chain_points.append(p)
                 # conv_chain.add_point(p)
                 if is_prev_conv:
-                    chain_edges.append(list(graph[prev_point, p])[0])
+                    chain_edges.append(list(graph[p_p, p])[0])
                     # conv_chain.add_edge(list(graph[prev_point, p])[0])
                 is_prev_conv = True
             else:
@@ -184,8 +184,8 @@ def convex_chain(graph, conv_chain):
                     chain_edges = []
                     chain_id+=1
                 is_prev_conv = False
-            prev_point = p
-            p = p_n #TODO: maybe redundant
+            p = p_n
+
         if chain_points:
             conv_chain.add_or_new_chain(chain_id_init,chain_points,chain_edges)
             chain_points = []

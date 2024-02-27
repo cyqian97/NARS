@@ -184,7 +184,7 @@ class Simulator:
         self.mouse_vertices = []
         self.start_point = None
         self.end_point = None
-        self.shortest_path = []
+        self.path = []
 
         self.vis_graph = vg.VisGraph()
         self.built = False
@@ -195,7 +195,7 @@ class Simulator:
 
     def toggle_draw_mode(self):
         self.mode_draw = not self.mode_draw
-        self._clear_shortest_path()
+        self._clear_path()
         self.mode_path = False
 
     def close_polygon(self):
@@ -209,17 +209,17 @@ class Simulator:
         if len(self.work_polygon) > 0:
             self.work_polygon.pop()
 
-    def toggle_shortest_path_mode(self):
+    def toggle_path_mode(self):
         if self.mode_path:
-            self._clear_shortest_path()
+            self._clear_path()
         self.mode_path = not self.mode_path
         self.mode_draw = False
 
     def clear_all(self):
         self.__init__()
 
-    def _clear_shortest_path(self):
-        self.shortest_path = []
+    def _clear_path(self):
+        self.path = []
         self.start_point = []
         self.end_point = []
 
@@ -290,7 +290,7 @@ def game_loop():
                     sim.save_map()
                 elif event.key == pygame.K_l:
                     sim.load_map()
-                #     sim.toggle_shortest_path_mode()
+                #     sim.toggle_path_mode()
 
             if sim.mode_draw:
                 if event.type == pygame.KEYUP:
@@ -320,7 +320,7 @@ def game_loop():
             #         elif pygame.mouse.get_pressed()[RIGHT - 1] or event.button == RIGHT:
             #             sim.end_point = vg.Point(pos[0], pos[1])
             #         if sim.start_point and sim.end_point:
-            #             sim.shortest_path = sim.vis_graph.shortest_path(
+            #             sim.path = sim.vis_graph.path(
             #                 sim.start_point, sim.end_point
             #             )
 
@@ -368,8 +368,8 @@ def game_loop():
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)
 
-        if len(sim.shortest_path) > 1:
-            draw_polygon(sim.shortest_path, red, 3, complete=False)
+        # if len(sim.shortest_path) > 1:
+        #     draw_polygon(sim.shortest_path, red, 3, complete=False)
 
         if sim.mode_draw:
             draw_text("-- DRAW MODE --", black, 25, 5, 5)

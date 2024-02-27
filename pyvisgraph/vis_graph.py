@@ -29,7 +29,7 @@ from tqdm import tqdm
 from warnings import warn
 
 from pyvisgraph.classes import Edge
-from pyvisgraph.graph import PolygonGraph, ChainGraph
+from pyvisgraph.graph import PolygonGraph, ChainGraph, Graph
 from pyvisgraph.shortest_path import shortest_path
 from pyvisgraph.visible_vertices import (
     visible_vertices,
@@ -89,9 +89,10 @@ class VisGraph(object):
         """
         self.input = input  # copy of input to save the raw polygon info
         self.graph = PolygonGraph(input)
-        self.visgraph = PolygonGraph([])
+        self.visgraph = Graph()
         self.conv_chains = ChainGraph()
-        self.bitcomp = PolygonGraph([])
+        self.bitcomp = Graph()
+        self.inflx = Graph()
 
         points = self.graph.get_points()
         batch_size = 10

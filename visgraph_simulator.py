@@ -329,7 +329,13 @@ def game_loop():
                 if event.type == pygame.MOUSEBUTTONUP and event.button == LEFT:
                     p = vg.Point(pos[0], pos[1])
                     if sim.vis_graph.point_valid(p):
-                        sim.path.append(p)
+                        if len(sim.path == 0):
+                            #TODO: init gaps
+                            print()
+                        else:
+                            sim.path.append(p)
+                            #TODO: update gaps
+
                 # if event.type == pygame.MOUSEBUTTONUP or any(
                 #     pygame.mouse.get_pressed()
                 # ):

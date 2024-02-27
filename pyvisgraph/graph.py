@@ -29,6 +29,7 @@ from pyvisgraph.visible_vertices import polygon_crossing
 
 eps = 0.01
 
+
 class Graph(object):
     """
     A Graph is represented by a dict where the keys are Points in the Graph
@@ -188,22 +189,37 @@ class ChainGraph(Graph):
         assert not chain_id in self.chains, f"new_chain: Chain id {
             chain_id} already in chains"
         self.chains[chain_id] = Chain(chain_id, set(vertices), set(edges))
-        print(vertices)
-        for key, value in self.graph.items():
-            print(key, value)
         self.add_points(vertices)
         self.add_edges(edges)
+        self.start_and_end(chain_id)
 
     def add_to_chain(self, chain_id, vertices, edges):
         assert chain_id in self.chains, f"add_to_chain: Chain id {
             chain_id} not in chains"
         self.chains[chain_id].add_edges(edges)
         self.chains[chain_id].add_points(vertices)
-        # self.add_points(vertices)
         self.add_edges(edges)
+        self.start_and_end(chain_id)
 
     def add_or_new_chain(self, chain_id, vertices, edges):
         if chain_id in self.chains:
             self.add_to_chain(chain_id, vertices, edges)
         else:
             self.new_chain(chain_id, vertices, edges)
+
+    def start_and_end(self, chain_id):
+        assert chain_id in self.chains, f"add_to_chain: Chain id {
+            chain_id} not in chains"
+        self.chains[chain_id].start = None
+        self.chains[chain_id].end = None
+
+        vertices = self.chains[chain_id].vertices
+        if len(vertices)==1:
+            self.chains[chain_id].start = list(vertices)[0]
+            self.chains[chain_id].end = list(vertices)[0]
+
+        for p in vertices:
+            if self.get_next_point(p) in vertices and (not self.get_prev_point(p) in vertices):
+                self.chains[chain_id].start = p
+            if (not self.get_next_point(p) in vertices) and self.get_prev_point(p) in vertices:
+                self.chains[chain_id].end = p

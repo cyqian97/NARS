@@ -355,8 +355,13 @@ def game_loop():
         if sim.built and sim.show_static_visgraph:
             draw_edges_side(sim.vis_graph.bitcomp.get_edges(), red,blue, 2)
             draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
-            draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 5)
-            draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 3)
+            draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 3)
+            draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 2)
+            for key, value in sim.vis_graph.conv_chains.chains.items():
+                p = value.start
+                if p: pygame.draw.circle(gameDisplay, green, (p.x, p.y), 6)
+                p = value.end
+                if p: pygame.draw.circle(gameDisplay, red, (p.x, p.y), 6)
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)

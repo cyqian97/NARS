@@ -56,8 +56,11 @@ clock = pygame.time.Clock()
 
 def draw_polygon(polygon, color, size, complete=True):
     if complete:
-        polygon.append(polygon[0])
-        pygame.draw.polygon(gameDisplay, color, [point() for point in polygon])
+        if len(polygon)>1:
+            polygon.append(polygon[0])
+            pygame.draw.polygon(gameDisplay, color, [point() for point in polygon])
+        else:
+            pygame.draw.circle(gameDisplay, color, (polygon[0].x, polygon[0].y), size*2)
     else:
         p1 = polygon[0]
         for p2 in polygon[1:]:
@@ -200,7 +203,7 @@ class Simulator:
         self.mode_path = False
 
     def close_polygon(self):
-        if len(self.work_polygon) > 1:
+        if len(self.work_polygon) >= 1:
             self.polygons.append(self.work_polygon)
             self.work_polygon = []
             self.vis_graph.build(self.polygons, status=False)

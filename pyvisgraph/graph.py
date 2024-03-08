@@ -138,45 +138,48 @@ class PolygonGraph(Graph):
         for polygon in polygons:
             while polygon[0] == polygon[-1] and len(polygon) > 1:
                 polygon.pop()
-            # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
-            current_edges = []
-            for i, point in enumerate(polygon):
-                sibling_point = polygon[(i + 1) % len(polygon)]
-                edge = Edge(point, sibling_point)
-                if len(polygon) > 2:
+            if len(polygon)<3:
+                for point in polygon:
                     point.polygon_id = pid
-                    sibling_point.polygon_id = pid
-                    self.polygon_edges[pid].add(edge)
-                    self.polygon_vertices[pid].append(point)
-                    current_edges.append(edge)
-                self.add_edge(edge)
+            else:
+                # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
+                current_edges = []
+                for i, point in enumerate(polygon):
+                    sibling_point = polygon[(i + 1) % len(polygon)]
+                    edge = Edge(point, sibling_point)
+                    if len(polygon) > 2:
+                        point.polygon_id = pid
+                        sibling_point.polygon_id = pid
+                        self.polygon_edges[pid].add(edge)
+                        self.polygon_vertices[pid].append(point)
+                        current_edges.append(edge)
+                    self.add_edge(edge)
 
-            mid_point = (current_edges[0].p1 + current_edges[0].p2) / 2
-            dir = (
-                eps
-                * (current_edges[0].p2 - current_edges[0].p1).to_vec()
-                / current_edges[0].length()
-            )
-            dir = [
-                dir[1],
-                -dir[0],
-                # The y axis is after x axis in pygame, thus this rotation in counterclockwise 90deg.
-            ]
-            test_point = mid_point + Point.from_vec(dir)
-            if polygon_crossing(test_point, current_edges):
-                # print("CounterClockwise")
-                for edge in current_edges:
-                    edge.flip()
-            # else:
-            #     print("Clockwise")
+                mid_point = (current_edges[0].p1 + current_edges[0].p2) / 2
+                dir = (
+                    eps
+                    * (current_edges[0].p2 - current_edges[0].p1).to_vec()
+                    / current_edges[0].length()
+                )
+                dir = [
+                    dir[1],
+                    -dir[0],
+                    # The y axis is after x axis in pygame, thus this rotation in counterclockwise 90deg.
+                ]
+                test_point = mid_point + Point.from_vec(dir)
+                if polygon_crossing(test_point, current_edges):
+                    # print("CounterClockwise")
+                    for edge in current_edges:
+                        edge.flip()
+                # else:
+                #     print("Clockwise")
 
-            # For the first polygon, which is the wall, the edge direction is flip as the exterior is the boundary side
-            if pid == 0:
-                for edge in current_edges:
-                    edge.flip()
+                # For the first polygon, which is the wall, the edge direction is flip as the exterior is the boundary side
+                if pid == 0:
+                    for edge in current_edges:
+                        edge.flip()
 
-            if len(polygon) > 2:
-                pid += 1
+            pid += 1
 
 
 class ChainGraph(Graph):

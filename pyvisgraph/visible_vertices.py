@@ -120,22 +120,33 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
         # Check the two ends of a bitangent line, the two edges on each side should be on the same side of the line
         if is_visible:
             sides = []
-            for edge in graph[p]:
-                sides.append(ccw(point, p, edge.get_adjacent(p)))
-            if len(sides) != 2:
-                raise Exception("len(edges)!=2")
-            if sides[0] != sides[1]:
-                is_visible = False
+            _edges = graph[p]
+            if len(_edges) == 2:
+                for _edge in _edges:
+                    sides.append(ccw(point, p, _edge.get_adjacent(p)))
+                if sides[0] != sides[1]:
+                    is_visible = False
+            elif len(_edges) == 0:
+                is_visible = True
+            else:
+                raise Exception(
+                    "len(_edges) should be 0 or 2, but is {}".format(len(_edges))
+                )
 
         if is_visible:
             sides = []
-            if graph[point]:
-                for edge in graph[point]:
+            _edges = graph[point]
+            if len(_edges) == 2:
+                for edge in _edges:
                     sides.append(ccw(p, point, edge.get_adjacent(point)))
-                if len(sides) != 2:
-                    raise Exception("len(edges)!=2")
                 if sides[0] != sides[1]:
                     is_visible = False
+            elif len(_edges) == 0:
+                is_visible = True
+            else:
+                raise Exception(
+                    "len(_edges) should be 0 or 2, but is {}".format(len(_edges))
+                )
 
         if is_visible:
             visible.append(p)
@@ -189,8 +200,7 @@ def convex_chain(graph, conv_chain):
             p = p_n
 
         if chain_points:
-            conv_chain.add_or_new_chain(
-                chain_id_init, chain_points, chain_edges)
+            conv_chain.add_or_new_chain(chain_id_init, chain_points, chain_edges)
             chain_points = []
             chain_edges = []
 
@@ -201,41 +211,43 @@ def bitangent_complement(graph, visgraph, bitcomp):
         # print(bit_line)
         p1 = bit_line.p1
         p2 = bit_line.p2
-        p1_d_min = float('inf')
+        p1_d_min = float("inf")
         p1_p_min = None
-        p2_d_min = float('inf')
+        p2_d_min = float("inf")
         p2_p_min = None
-        p1_vec = (p2-p1).to_vec()
+        p1_vec = (p2 - p1).to_vec()
         p2_vec = p1_vec * -1
         for edge in graph.get_edges():
             p = intersect_point(p1, p2, edge)
             if p and p != p1 and p != p2 and on_segment(edge.p1, p, edge.p2):
                 # print(edge)
                 # print(p)
-                if (p-p1).to_vec().dot(p1_vec) < 0:
+                if (p - p1).to_vec().dot(p1_vec) < 0:
                     d = edge_distance(p, p1)
-                    if (d < p1_d_min):
+                    if d < p1_d_min:
                         p1_d_min = d
                         p1_p_min = p
-                if (p-p2).to_vec().dot(p2_vec) < 0:
+                if (p - p2).to_vec().dot(p2_vec) < 0:
                     d = edge_distance(p, p2)
-                    if (d < p2_d_min):
+                    if d < p2_d_min:
                         p2_d_min = d
                         p2_p_min = p
         if p1_p_min:
-            edge = Edge(bit_line.p1, p1_p_min)
-            edge.side = ccw(p1_p_min, bit_line.p1,
-                            graph.get_next_point(bit_line.p1))
-            bitcomp.add_edge(edge)
+            _next_point = graph.get_next_point(bit_line.p1)
+            if _next_point:
+                edge = Edge(bit_line.p1, p1_p_min)
+                edge.side = ccw(p1_p_min, bit_line.p1, _next_point)
+                bitcomp.add_edge(edge)
 
         else:
             raise Exception("bitangent complement for p1 not found")
 
         if p2_p_min:
-            edge = Edge(bit_line.p2, p2_p_min)
-            edge.side = ccw(p2_p_min, bit_line.p2,
-                            graph.get_next_point(bit_line.p2))
-            bitcomp.add_edge(edge)
+            _next_point = graph.get_next_point(bit_line.p2)
+            if _next_point:
+                edge = Edge(bit_line.p2, p2_p_min)
+                edge.side = ccw(p2_p_min, bit_line.p2, _next_point)
+                bitcomp.add_edge(edge)
         else:
             raise Exception("bitangent complement for p2 not found")
 
@@ -255,21 +267,20 @@ def ray_cast(p1, p2, graph):
     """
     extend an ray from p2 in the direction of p1->p2 until it hit an edge
     """
-    p2_d_min = float('inf')
+    p2_d_min = float("inf")
     p2_p_min = None
-    p2_vec = (p2-p1).to_vec()
+    p2_vec = (p2 - p1).to_vec()
     for edge in graph.get_edges():
         p = intersect_point(p1, p2, edge)
         if p and p != p1 and p != p2 and on_segment(edge.p1, p, edge.p2):
-            if (p-p2).to_vec().dot(p2_vec) > 0:
+            if (p - p2).to_vec().dot(p2_vec) > 0:
                 d = edge_distance(p, p2)
-                if (d < p2_d_min):
+                if d < p2_d_min:
                     p2_d_min = d
                     p2_p_min = p
     if p2_p_min:
         edge = Edge(p2, p2_p_min)
-        edge.side = ccw(p2_p_min, p2,
-                        graph.get_next_point(p2))
+        edge.side = ccw(p2_p_min, p2, graph.get_next_point(p2))
         return edge
     else:
         raise Exception("Cannot extend p1->p2")
@@ -362,12 +373,10 @@ def closest_point(p, graph, polygon_id, length=0.001):
     # Finds point closest to p, but on a edge of the polygon.
     # Solution from http://stackoverflow.com/a/6177788/4896361
     for i, e in enumerate(polygon_edges):
-        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + \
-            (p.y - e.p1.y) * (e.p2.y - e.p1.y)
+        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + (p.y - e.p1.y) * (e.p2.y - e.p1.y)
         denom = (e.p2.x - e.p1.x) ** 2 + (e.p2.y - e.p1.y) ** 2
         u = num / denom
-        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x),
-                   e.p1.y + u * (e.p2.y - e.p1.y))
+        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x), e.p1.y + u * (e.p2.y - e.p1.y))
         pc = pu
         if u < 0:
             pc = e.p1

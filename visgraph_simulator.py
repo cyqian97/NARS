@@ -52,8 +52,6 @@ gameDisplay = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption("NARS Simulator")
 clock = pygame.time.Clock()
 
-#TODO: add point object feature
-
 def draw_polygon(polygon, color, size, complete=True):
     if complete:
         if len(polygon)>1:

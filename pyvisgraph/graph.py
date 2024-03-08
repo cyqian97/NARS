@@ -141,6 +141,7 @@ class PolygonGraph(Graph):
             if len(polygon)<3:
                 for point in polygon:
                     point.polygon_id = pid
+                    self.add_point(point)
             else:
                 # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
                 current_edges = []

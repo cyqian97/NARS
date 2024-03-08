@@ -28,6 +28,7 @@ import datetime
 import glob
 import os
 import re
+import math
 
 pygame.init()
 
@@ -42,7 +43,8 @@ lightred = (255, 220, 220)
 gray = (169, 169, 169)
 green = (0, 128, 0)
 blue = (17, 0, 187)
-
+yellow = (200, 200, 0)
+purple = (154,128,185)
 LEFT = 1
 RIGHT = 3
 
@@ -58,7 +60,7 @@ def draw_polygon(polygon, color, size, complete=True):
             polygon.append(polygon[0])
             pygame.draw.polygon(gameDisplay, color, [point() for point in polygon])
         else:
-            pygame.draw.circle(gameDisplay, color, (polygon[0].x, polygon[0].y), size*2)
+            draw_star(gameDisplay, purple, (polygon[0].x, polygon[0].y), size*3)
     else:
         p1 = polygon[0]
         for p2 in polygon[1:]:
@@ -89,6 +91,24 @@ def draw_vertices(points, color, size):
     for p in points:
         pygame.draw.circle(gameDisplay, color, (p.x, p.y), size)
 
+def draw_star(screen, color, point, size):
+    """
+    Draws a 5-point star centered at 'center' with a given 'size' and 'color' on 'screen'.
+    - screen: pygame.Surface where the star will be drawn.
+    - center: Tuple (x, y) coordinates for the center of the star.
+    - size: The radius of the circle in which the star fits.
+    - color: The color of the star.
+    """
+    x, y = point
+    points = []
+    # Loop to calculate the points for both the outer and inner vertices
+    for i in range(10):
+        radius = size if i % 2 == 0 else size / 2
+        angle = math.radians(i * 36 - 90)  # 36 degrees between each point, starting facing upwards
+        point_x = x + math.cos(angle) * radius
+        point_y = y + math.sin(angle) * radius
+        points.append((point_x, point_y))
+    pygame.draw.polygon(screen, color, points)
 
 def draw_visible_mouse_vertices(pos, points, color, size):
     for point in points:
@@ -119,6 +139,8 @@ def help_screen():
                     pygame.quit()
                     quit()
                 elif event.key == pygame.K_h:
+                    helping = False
+                elif event.key == pygame.K_d:
                     helping = False
 
         pygame.draw.rect(gameDisplay, black, (startx, starty, rectw, recth))

@@ -138,10 +138,12 @@ class PolygonGraph(Graph):
         for polygon in polygons:
             while polygon[0] == polygon[-1] and len(polygon) > 1:
                 polygon.pop()
-            if len(polygon)<3:
+            if len(polygon) == 1:
                 for point in polygon:
                     point.polygon_id = pid
                     self.add_point(point)
+            elif len(polygon) == 2:
+                raise Exception("len(polygon) should not be 2, edge obstacle are currently not allowed.")
             else:
                 # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
                 current_edges = []

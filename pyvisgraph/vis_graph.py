@@ -61,6 +61,7 @@ class VisGraph(object):
         self.visgraph = None
         self.conv_chains = None
         self.bitcomp = None
+        self.inflx = None
         self.input = None
 
     def load(self, filename):

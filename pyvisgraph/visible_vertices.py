@@ -440,7 +440,7 @@ def intersect_point(p1, p2, edge):
     intersect_y = eslope * (intersect_x - edge.p1.x) + edge.p1.y
     return Point(intersect_x, intersect_y)
 
-def edge_intersect(edge1,edge2):
+def edge_cross_point(edge1,edge2):
     p = intersect_point(edge1.p1, edge1.p2, edge2)
     if p and on_segment(edge1.p1, p, edge1.p2) and on_segment(edge2.p1, p, edge2.p2):
         return p

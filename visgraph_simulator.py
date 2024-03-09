@@ -44,7 +44,7 @@ gray = (169, 169, 169)
 green = (0, 128, 0)
 blue = (17, 0, 187)
 yellow = (200, 200, 0)
-purple = (154,128,185)
+purple = (154, 128, 185)
 LEFT = 1
 RIGHT = 3
 
@@ -54,42 +54,52 @@ gameDisplay = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption("NARS Simulator")
 clock = pygame.time.Clock()
 
+
 def draw_polygon(polygon, color, size, complete=True):
     if complete:
-        if len(polygon)>1:
+        if len(polygon) > 1:
             polygon.append(polygon[0])
-            pygame.draw.polygon(gameDisplay, color, [point() for point in polygon])
+            pygame.draw.polygon(gameDisplay, color, [
+                                point() for point in polygon])
         else:
-            draw_star(gameDisplay, purple, (polygon[0].x, polygon[0].y), size*3)
+            draw_star(gameDisplay, purple,
+                      (polygon[0].x, polygon[0].y), size*3)
     else:
         p1 = polygon[0]
         for p2 in polygon[1:]:
-            pygame.draw.line(gameDisplay, color, (p1.x, p1.y), (p2.x, p2.y), size)
+            pygame.draw.line(gameDisplay, color,
+                             (p1.x, p1.y), (p2.x, p2.y), size)
             p1 = p2
 
 
 def draw_edges(edges, color, size):
     for edge in edges:
         pygame.draw.line(
-            gameDisplay, color, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
+            gameDisplay, color, (edge.p1.x,
+                                 edge.p1.y), (edge.p2.x, edge.p2.y), size
         )
+
 
 def draw_edges_side(edges, color1, color2, size):
     for edge in edges:
         if edge.side == 1:
             pygame.draw.line(
-                gameDisplay, color1, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
+                gameDisplay, color1, (edge.p1.x,
+                                      edge.p1.y), (edge.p2.x, edge.p2.y), size
             )
         elif edge.side == -1:
             pygame.draw.line(
-                gameDisplay, color2, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
+                gameDisplay, color2, (edge.p1.x,
+                                      edge.p1.y), (edge.p2.x, edge.p2.y), size
             )
         else:
             raise Exception(f"Edge side should be -1 or 1, not {edge.side}")
 
+
 def draw_vertices(points, color, size):
     for p in points:
         pygame.draw.circle(gameDisplay, color, (p.x, p.y), size)
+
 
 def draw_star(screen, color, point, size):
     """
@@ -104,15 +114,18 @@ def draw_star(screen, color, point, size):
     # Loop to calculate the points for both the outer and inner vertices
     for i in range(10):
         radius = size if i % 2 == 0 else size / 2
-        angle = math.radians(i * 36 - 90)  # 36 degrees between each point, starting facing upwards
+        # 36 degrees between each point, starting facing upwards
+        angle = math.radians(i * 36 - 90)
         point_x = x + math.cos(angle) * radius
         point_y = y + math.sin(angle) * radius
         points.append((point_x, point_y))
     pygame.draw.polygon(screen, color, points)
 
+
 def draw_visible_mouse_vertices(pos, points, color, size):
     for point in points:
-        pygame.draw.line(gameDisplay, color, (pos.x, pos.y), (point.x, point.y), size)
+        pygame.draw.line(gameDisplay, color, (pos.x, pos.y),
+                         (point.x, point.y), size)
 
 
 def draw_text(mode_txt, color, size, x, y):
@@ -144,7 +157,8 @@ def help_screen():
                     helping = False
 
         pygame.draw.rect(gameDisplay, black, (startx, starty, rectw, recth))
-        pygame.draw.rect(gameDisplay, white, (startxi, startyi, rectwi, recthi))
+        pygame.draw.rect(gameDisplay, white,
+                         (startxi, startyi, rectwi, recthi))
 
         draw_text(
             "-- VISIBILITY GRAPH SIMULATOR --", black, 30, startxi + 90, startyi + 10
@@ -157,7 +171,8 @@ def help_screen():
             startxi + 10,
             startyi + 80,
         )
-        draw_text("D - TOGGLE DRAW MODE", black, 25, startxi + 10, startyi + 115)
+        draw_text("D - TOGGLE DRAW MODE", black,
+                  25, startxi + 10, startyi + 115)
         draw_text(
             "    Draw polygons by left clicking to set a point of the",
             black,
@@ -179,7 +194,8 @@ def help_screen():
             startxi + 10,
             startyi + 215,
         )
-        draw_text("    C - CLEAR THE SCREEN", black, 25, startxi + 10, startyi + 250)
+        draw_text("    C - CLEAR THE SCREEN", black,
+                  25, startxi + 10, startyi + 250)
         draw_text("S - SAVE MAP", black, 25, startxi + 10, startyi + 285)
         draw_text("L - LOAD MAP", black, 25, startxi + 10, startyi + 320)
         # draw_text("S - TOGGLE SHORTEST PATH MODE", black, 25, startxi+10, startyi+285)
@@ -232,6 +248,10 @@ class Simulator:
     def draw_point_undo(self):
         if len(self.work_polygon) > 0:
             self.work_polygon.pop()
+        elif len(self.polygons) > 0:
+            self.polygons.pop()
+            self.vis_graph.build(self.polygons, status=False)
+            self.built = True
 
     def toggle_path_mode(self):
         if self.mode_path:
@@ -249,7 +269,7 @@ class Simulator:
 
     def save_map(self):
         # Prompt the user for input
-        file_name = "" #input("Enter file name: ")
+        file_name = ""  # input("Enter file name: ")
         if not file_name:
             # Use the current time as the file name
             # Format the time as a string suitable for a file name
@@ -274,7 +294,8 @@ class Simulator:
         files = glob.glob(os.path.join(directory, "*"))
 
         # Filter files that match the pattern
-        filtered_files = [f for f in files if re.search(pattern, os.path.basename(f))]
+        filtered_files = [f for f in files if re.search(
+            pattern, os.path.basename(f))]
 
         # Find the most recently created file among the filtered files
         if filtered_files:
@@ -291,7 +312,7 @@ class Simulator:
 def game_loop():
     sim = Simulator()
     gameExit = False
-    
+
     cursor_pos = None
 
     while not gameExit:
@@ -307,7 +328,10 @@ def game_loop():
                 # elif event.key == pygame.K_g:
                 #     sim.show_static_visgraph = not sim.show_static_visgraph
                 elif event.key == pygame.K_m:
+                    sim.toggle_draw_mode()
                     sim.show_mouse_visgraph = not sim.show_mouse_visgraph
+                    sim.toggle_path_mode()
+
                 elif event.key == pygame.K_d:
                     sim.toggle_draw_mode()
                 elif event.key == pygame.K_s:
@@ -327,7 +351,8 @@ def game_loop():
                         if len(sim.polygons) > 0:
                             if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
                                 print(f"({pos[0]}, {pos[1]})")
-                                sim.work_polygon.append(vg.Point(pos[0], pos[1]))
+                                sim.work_polygon.append(
+                                    vg.Point(pos[0], pos[1]))
                         else:
                             sim.work_polygon.append(vg.Point(pos[0], pos[1]))
                     elif event.button == RIGHT:
@@ -335,6 +360,17 @@ def game_loop():
 
             if event.type == pygame.MOUSEMOTION:
                 cursor_pos = pos
+
+            if sim.mode_path and sim.built:
+                if event.type == pygame.MOUSEBUTTONUP:
+                    if event.button == LEFT:
+                        sim.path.append(vg.Point(pos[0], pos[1]))
+                        if len(sim.path) > 1:
+                            for i in range(len(sim.path)-1):
+                                vg.gap_sensor.gap_events(
+                                    vg.Edge(sim.path[i], sim.path[i+1]), sim.vis_graph.bitcomp, sim.vis_graph.inflx)
+                            print()
+
             # if sim.mode_path and sim.built:
             #     if event.type == pygame.MOUSEBUTTONUP or any(
             #         pygame.mouse.get_pressed()
@@ -352,7 +388,8 @@ def game_loop():
                 if event.type == pygame.MOUSEMOTION:
                     if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
                         sim.mouse_point = vg.Point(pos[0], pos[1])
-                        sim.mouse_vertices = sim.vis_graph.find_visible(sim.mouse_point)
+                        sim.mouse_vertices = sim.vis_graph.find_visible(
+                            sim.mouse_point)
 
         # Display loop
         gameDisplay.fill(white)
@@ -377,23 +414,25 @@ def game_loop():
                     draw_polygon(polygon, gray, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_edges_side(sim.vis_graph.bitcomp.get_edges(), red,blue, 2)
+            draw_edges_side(sim.vis_graph.bitcomp.get_edges(), red, blue, 2)
             draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
             draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 3)
             draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 2)
             for key, value in sim.vis_graph.conv_chains.chains.items():
                 p = value.start
-                if p: pygame.draw.circle(gameDisplay, green, (p.x, p.y), 6)
+                if p:
+                    pygame.draw.circle(gameDisplay, green, (p.x, p.y), 6)
                 p = value.end
-                if p: pygame.draw.circle(gameDisplay, red, (p.x, p.y), 6)
+                if p:
+                    pygame.draw.circle(gameDisplay, red, (p.x, p.y), 6)
             draw_edges(sim.vis_graph.inflx.get_edges(), black, 2)
-            
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
-            draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)
+            draw_visible_mouse_vertices(
+                sim.mouse_point, sim.mouse_vertices, gray, 1)
 
-        # if len(sim.shortest_path) > 1:
-        #     draw_polygon(sim.shortest_path, red, 3, complete=False)
+        if len(sim.path) > 1:
+            draw_polygon(sim.path, red, 3, complete=False)
 
         if sim.mode_draw:
             draw_text("-- DRAW MODE --", black, 25, 5, 5)

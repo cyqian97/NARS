@@ -141,6 +141,7 @@ class PolygonGraph(Graph):
             if len(polygon) == 1:
                 for point in polygon:
                     point.polygon_id = pid
+                    # Currently, the single point is not added to polygon_vertices
                     self.add_point(point)
             elif len(polygon) == 2:
                 raise Exception("len(polygon) should not be 2, edge obstacle are currently not allowed.")

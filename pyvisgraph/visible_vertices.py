@@ -162,6 +162,16 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
 
 
 def convex_chain(graph, conv_chain):
+    """_summary_
+    convex_chain compute the convex vertex chains in 'graph', and put them in 'conv_chain'
+    Args:
+        graph (PolygonGraph): The original graph
+        conv_chain (ChainGraph): The convex chain graph
+
+    Raises:
+        Exception: _description_
+        Exception: _description_
+    """
     chain_id = 0
     for pid, polygon in graph.polygon_vertices.items():
         chain_id_init = chain_id
@@ -183,15 +193,13 @@ def convex_chain(graph, conv_chain):
             p_n = graph.get_next_point(p)
             if not p_n or not p_p:
                 raise Exception(f"point {p} has no prev or next point")
-            if ccw(p_p, p, p_n) == CCW:
+            if ccw(p_p, p, p_n) == CCW:  # Add convex vertex to the current chain
                 chain_points.append(p)
-                # conv_chain.add_point(p)
-                if is_prev_conv:
+                if is_prev_conv:  # If the previos vertex is also convex, add the edge between them
                     chain_edges.append(list(graph[p_p, p])[0])
-                    # conv_chain.add_edge(list(graph[prev_point, p])[0])
                 is_prev_conv = True
             else:
-                if is_prev_conv:
+                if is_prev_conv:  # Reach the end of the chain
                     conv_chain.new_chain(chain_id, chain_points, chain_edges)
                     chain_points = []
                     chain_edges = []
@@ -200,9 +208,13 @@ def convex_chain(graph, conv_chain):
             p = p_n
 
         if chain_points:
-            conv_chain.add_or_new_chain(chain_id_init, chain_points, chain_edges)
+            # If vertices remain in the current chain after traverse the polygon, 
+            # it means the chain continues from end of the polygon to the beginning of the polygon
+            conv_chain.add_or_new_chain(
+                chain_id_init, chain_points, chain_edges)
             chain_points = []
             chain_edges = []
+            chain_id += 1
 
 
 def bitangent_complement(graph, visgraph, bitcomp):
@@ -373,10 +385,12 @@ def closest_point(p, graph, polygon_id, length=0.001):
     # Finds point closest to p, but on a edge of the polygon.
     # Solution from http://stackoverflow.com/a/6177788/4896361
     for i, e in enumerate(polygon_edges):
-        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + (p.y - e.p1.y) * (e.p2.y - e.p1.y)
+        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + \
+            (p.y - e.p1.y) * (e.p2.y - e.p1.y)
         denom = (e.p2.x - e.p1.x) ** 2 + (e.p2.y - e.p1.y) ** 2
         u = num / denom
-        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x), e.p1.y + u * (e.p2.y - e.p1.y))
+        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x),
+                   e.p1.y + u * (e.p2.y - e.p1.y))
         pc = pu
         if u < 0:
             pc = e.p1
@@ -440,12 +454,14 @@ def intersect_point(p1, p2, edge):
     intersect_y = eslope * (intersect_x - edge.p1.x) + edge.p1.y
     return Point(intersect_x, intersect_y)
 
-def edge_cross_point(edge1,edge2):
+
+def edge_cross_point(edge1, edge2):
     p = intersect_point(edge1.p1, edge1.p2, edge2)
     if p and on_segment(edge1.p1, p, edge1.p2) and on_segment(edge2.p1, p, edge2.p2):
         return p
     else:
         return None
+
 
 def point_edge_distance(p1, p2, edge):
     """Return the Eucledian distance from p1 to intersect point with edge.

@@ -45,6 +45,8 @@ green = (0, 128, 0)
 blue = (17, 0, 187)
 yellow = (200, 200, 0)
 purple = (154, 128, 185)
+brown = (146,114,84)
+
 LEFT = 1
 RIGHT = 3
 
@@ -432,7 +434,7 @@ def game_loop():
                 sim.mouse_point, sim.mouse_vertices, gray, 1)
 
         if len(sim.path) > 1:
-            draw_polygon(sim.path, red, 3, complete=False)
+            draw_polygon(sim.path, brown, 3, complete=False)
 
         if sim.mode_draw:
             draw_text("-- DRAW MODE --", black, 25, 5, 5)

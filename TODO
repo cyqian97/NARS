@@ -1,3 +1,4 @@
 init gaps
+    remember chain_id
 assign info to each event (related gaps, side)
 run algorithm

@@ -3,13 +3,13 @@ from numpy import array
 
 
 class Point(object):
-    __slots__ = ("x", "y", "polygon_id","conv_chain_id")
+    __slots__ = ("x", "y", "polygon_id","chain_id")
 
     def __init__(self, x, y, polygon_id=-1):
         self.x = float(x)
         self.y = float(y)
         self.polygon_id = polygon_id
-        self.conv_chain_id = -1
+        self.chain_id = -1
 
     @classmethod
     def from_vec(cls, vec):
@@ -121,6 +121,8 @@ class Chain():
         self.end = None
         self.vertices = vertices
         self.edges = edges
+        for v in self.vertices:
+            v.chain_id = chain_id
 
     def add_edges(self,edges):
         self.edges.update(edges)

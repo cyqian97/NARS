@@ -16,4 +16,3 @@ def gap_events(path_edge,bitcomp,inflx):
         print(p[1], end =" ") 
     return events
     
-    

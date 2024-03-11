@@ -235,6 +235,12 @@ class Simulator:
         self.mode_draw = True
         self.mode_path = False
 
+        self.robot = None
+
+    def build(self):
+        self.vis_graph.build(self.polygons, status=False)
+        self.built = True
+
     def toggle_draw_mode(self):
         self.mode_draw = not self.mode_draw
         self._clear_path()
@@ -244,16 +250,14 @@ class Simulator:
         if len(self.work_polygon) >= 1:
             self.polygons.append(self.work_polygon)
             self.work_polygon = []
-            self.vis_graph.build(self.polygons, status=False)
-            self.built = True
+            self.build()
 
     def draw_point_undo(self):
         if len(self.work_polygon) > 0:
             self.work_polygon.pop()
         elif len(self.polygons) > 0:
             self.polygons.pop()
-            self.vis_graph.build(self.polygons, status=False)
-            self.built = True
+            self.build()
 
     def toggle_path_mode(self):
         if self.mode_path:
@@ -305,8 +309,7 @@ class Simulator:
             print(f"Loading the latest file: {latest_file}")
             self.vis_graph.load(latest_file)
             self.polygons = self.vis_graph.input
-            self.vis_graph.build(self.polygons, status=False)
-            self.built = True
+            self.build()
         else:
             print("No files found matching the pattern.")
 
@@ -365,13 +368,16 @@ def game_loop():
 
             if sim.mode_path and sim.built:
                 if event.type == pygame.MOUSEBUTTONUP:
-                    if event.button == LEFT:
-                        sim.path.append(vg.Point(pos[0], pos[1]))
+                    _p = vg.Point(pos[0], pos[1])
+                    if event.button == LEFT and sim.vis_graph.point_valid(_p):
+                        sim.path.append(_p)
                         if len(sim.path) > 1:
                             for i in range(len(sim.path)-1):
                                 vg.gap_sensor.gap_events(
                                     vg.Edge(sim.path[i], sim.path[i+1]), sim.vis_graph.bitcomp, sim.vis_graph.inflx)
                             print()
+                        else:
+                            sim.robot = vg.Robot(sim.vis_graph,_p)
 
             # if sim.mode_path and sim.built:
             #     if event.type == pygame.MOUSEBUTTONUP or any(

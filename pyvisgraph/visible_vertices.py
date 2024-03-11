@@ -25,7 +25,6 @@ SOFTWARE.
 from __future__ import division
 from math import pi, sqrt, atan, acos
 from pyvisgraph.classes import Point, Edge
-from
 
 INF = 10000
 CCW = 1

@@ -23,7 +23,9 @@ class Robot():
         print([g.id for g in self.gaps])
     
     def update():
-        gap_events(path_edge,self.vis_graph.bitcomp,self.vis_graph.inflx)
+        events = gap_events(path_edge,self.vis_graph.bitcomp,self.vis_graph.inflx)
+        # for event in events:
+
 
 
 class Gap():

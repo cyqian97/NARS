@@ -1,3 +1,8 @@
-for each gap:
-    record initial gap vertex
-    
+Display gaps:
+    When the robot initialize
+    Then I should see a cirle showing all gaps with lables
+
+Implementation:
+    Draw a cirle on the top right corner
+    Draw short lines for each gap
+    Draw label at the end of each line

@@ -133,16 +133,25 @@ def draw_visible_mouse_vertices(pos, points, color, size):
 
 
 def draw_gap_sensor(robot):
-    center = (100, 100)
-    radius = 50
-    for i in range(robot.gap_ids):
-        dir = robot
+    center = (100, 200)
+    radius = 60
+    pygame.draw.circle(gameDisplay,black,center,radius,3)
+    # for gap in robot.gaps:
+    #     dir = robo
 
 
 def draw_text(mode_txt, color, size, x, y):
     font = pygame.font.SysFont(None, size)
     text = font.render(mode_txt, True, color)
     gameDisplay.blit(text, (x, y))
+
+def quit_event(event):
+    if event.type == pygame.QUIT:
+        pygame.quit()
+        quit()
+    elif event.type == pygame.KEYUP and (event.key == pygame.K_q or event.key == pygame.K_ESCAPE):
+        pygame.quit()
+        quit()
 
 
 def help_screen():
@@ -158,11 +167,9 @@ def help_screen():
     helping = True
     while helping:
         for event in pygame.event.get():
+            quit_event(event)
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_q:
-                    pygame.quit()
-                    quit()
-                elif event.key == pygame.K_h:
+                if event.key == pygame.K_h:
                     helping = False
                 elif event.key == pygame.K_d:
                     helping = False
@@ -333,11 +340,9 @@ def game_loop():
         # Event loop
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
+            quit_event(event)
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_q:
-                    pygame.quit()
-                    quit()
-                elif event.key == pygame.K_h:
+                if event.key == pygame.K_h:
                     help_screen()
                 # elif event.key == pygame.K_g:
                 #     sim.show_static_visgraph = not sim.show_static_visgraph
@@ -449,6 +454,8 @@ def game_loop():
             draw_visible_mouse_vertices(
                 sim.mouse_point, sim.mouse_vertices, gray, 1)
 
+        if len(sim.path) >= 1:
+            draw_gap_sensor(sim.robot)
         if len(sim.path) > 1:
             draw_polygon(sim.path, brown, 3, complete=False)
 

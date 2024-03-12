@@ -159,6 +159,8 @@ class PolygonGraph(Graph):
                         current_edges.append(edge)
                     self.add_edge(edge)
 
+                # Make sure the infeasible area is on the righthand side of each edge looking from p1 to p2
+                # If not, flip p1 and p2 of the edge
                 mid_point = (current_edges[0].p1 + current_edges[0].p2) / 2
                 dir = (
                     eps

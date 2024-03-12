@@ -46,6 +46,7 @@ blue = (17, 0, 187)
 yellow = (200, 200, 0)
 purple = (154, 128, 185)
 brown = (146,114,84)
+c_matlab = ("#0072BD","#D95319","#EDB120","#7E2F8E","#77AC30","#4DBEEE","#A2142F")
 
 LEFT = 1
 RIGHT = 3
@@ -422,7 +423,7 @@ def game_loop():
                     draw_polygon(polygon, gray, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_edges_side(sim.vis_graph.bitcomp.get_edges(), red, blue, 2)
+            draw_edges_side(sim.vis_graph.bitcomp.get_edges(), c_matlab[0], c_matlab[1], 2)
             draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
             draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 3)
             draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 2)
@@ -433,7 +434,7 @@ def game_loop():
                 p = value.end
                 if p:
                     pygame.draw.circle(gameDisplay, red, (p.x, p.y), 6)
-            draw_edges(sim.vis_graph.inflx.get_edges(), black, 2)
+            draw_edges_side(sim.vis_graph.inflx.get_edges(), c_matlab[2],c_matlab[3], 2)
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             draw_visible_mouse_vertices(

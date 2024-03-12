@@ -249,6 +249,8 @@ def bitangent_complement(graph, visgraph, bitcomp):
             if _next_point:
                 edge = Edge(bit_line.p1, p1_p_min)
                 edge.side = ccw(p1_p_min, bit_line.p1, _next_point)
+                if edge.side == COLLINEAR:
+                    raise Exception("ERROR: Bitangent complement is collinear with a boundary edge")
                 bitcomp.add_edge(edge)
 
         else:
@@ -259,6 +261,8 @@ def bitangent_complement(graph, visgraph, bitcomp):
             if _next_point:
                 edge = Edge(bit_line.p2, p2_p_min)
                 edge.side = ccw(p2_p_min, bit_line.p2, _next_point)
+                if edge.side == COLLINEAR:
+                    raise Exception("ERROR: Bitangent complement is collinear with a boundary edge")
                 bitcomp.add_edge(edge)
         else:
             raise Exception("bitangent complement for p2 not found")
@@ -269,10 +273,14 @@ def inflection_lines(graph, conv_chain, inflx):
     for chain_id, chain in conv_chain.chains.items():
         if chain.start:
             p_p = graph.get_prev_point(chain.start)
-            inflx.add_edge(ray_cast(p_p, chain.start, graph))
+            edge = ray_cast(p_p, chain.start, graph)
+            edge.side = CW
+            inflx.add_edge(edge)
 
             p_n = graph.get_next_point(chain.end)
-            inflx.add_edge(ray_cast(p_n, chain.end, graph))
+            edge = ray_cast(p_n, chain.end, graph)
+            edge.side = CCW
+            inflx.add_edge(edge)
 
 
 def ray_cast(p1, p2, graph):
@@ -515,9 +523,9 @@ def ccw(A, B, C):
     #  Rounding this way is faster than calling round()
     area = int(((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x)) * T) / T2
     if area > 0:
-        return 1
+        return CCW
     if area < 0:
-        return -1
+        return CW
     return 0
 
 

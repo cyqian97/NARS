@@ -45,8 +45,9 @@ green = (0, 128, 0)
 blue = (17, 0, 187)
 yellow = (200, 200, 0)
 purple = (154, 128, 185)
-brown = (146,114,84)
-c_matlab = ("#0072BD","#D95319","#EDB120","#7E2F8E","#77AC30","#4DBEEE","#A2142F")
+brown = (146, 114, 84)
+c_matlab = ("#0072BD", "#D95319", "#EDB120",
+            "#7E2F8E", "#77AC30", "#4DBEEE", "#A2142F")
 
 LEFT = 1
 RIGHT = 3
@@ -132,11 +133,10 @@ def draw_visible_mouse_vertices(pos, points, color, size):
 
 
 def draw_gap_sensor(robot):
-    center = (100,100)
+    center = (100, 100)
     radius = 50
     for i in range(robot.gap_ids):
         dir = robot
-
 
 
 def draw_text(mode_txt, color, size, x, y):
@@ -381,12 +381,11 @@ def game_loop():
                     if event.button == LEFT and sim.vis_graph.point_valid(_p):
                         sim.path.append(_p)
                         if len(sim.path) > 1:
-                            for i in range(len(sim.path)-1):
-                                vg.gap_sensor.gap_events(
-                                    vg.Edge(sim.path[i], sim.path[i+1]), sim.vis_graph.bitcomp, sim.vis_graph.inflx)
+                            vg.gap_sensor.gap_events(
+                                vg.Edge(sim.path[-2], sim.path[-1]), sim.vis_graph.bitcomp, sim.vis_graph.inflx)
                             print()
                         else:
-                            sim.robot = vg.Robot(sim.vis_graph,_p)
+                            sim.robot = vg.Robot(sim.vis_graph, _p)
 
             # if sim.mode_path and sim.built:
             #     if event.type == pygame.MOUSEBUTTONUP or any(
@@ -431,7 +430,8 @@ def game_loop():
                     draw_polygon(polygon, gray, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_edges_side(sim.vis_graph.bitcomp.get_edges(), c_matlab[0], c_matlab[1], 2)
+            draw_edges_side(sim.vis_graph.bitcomp.get_edges(),
+                            c_matlab[0], c_matlab[1], 2)
             draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
             draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 3)
             draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 2)
@@ -442,7 +442,8 @@ def game_loop():
                 p = value.end
                 if p:
                     pygame.draw.circle(gameDisplay, red, (p.x, p.y), 6)
-            draw_edges_side(sim.vis_graph.inflx.get_edges(), c_matlab[2],c_matlab[3], 2)
+            draw_edges_side(sim.vis_graph.inflx.get_edges(),
+                            c_matlab[2], c_matlab[3], 2)
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             draw_visible_mouse_vertices(

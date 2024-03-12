@@ -1,5 +1,5 @@
 
-from pyvisgraph import gap_sensor 
+from pyvisgraph.gap_sensor import gap_events 
 from pyvisgraph import Point
 from numpy import array
 from numpy.linalg import norm
@@ -21,6 +21,9 @@ class Robot():
             self.gaps.append(Gap(self.next_gap_id,v,dir))
             self.next_gap_id+=1
         print([g.id for g in self.gaps])
+    
+    def update():
+        gap_events(path_edge,self.vis_graph.bitcomp,self.vis_graph.inflx)
 
 
 class Gap():

@@ -248,7 +248,7 @@ def bitangent_complement(graph, visgraph, bitcomp):
             _next_point = graph.get_next_point(bit_line.p1)
             if _next_point:
                 edge = Edge(bit_line.p1, p1_p_min)
-                edge.side = ccw(p1_p_min, bit_line.p1, _next_point)
+                edge.side = ccw(p1_p_min, bit_line.p1, _next_point) 
                 if edge.side == COLLINEAR:
                     raise Exception("ERROR: Bitangent complement is collinear with a boundary edge")
                 bitcomp.add_edge(edge)
@@ -274,12 +274,12 @@ def inflection_lines(graph, conv_chain, inflx):
         if chain.start:
             p_p = graph.get_prev_point(chain.start)
             edge = ray_cast(p_p, chain.start, graph)
-            edge.side = CW
+            edge.side = CW #In GUI, boundary on the lhs
             inflx.add_edge(edge)
 
             p_n = graph.get_next_point(chain.end)
             edge = ray_cast(p_n, chain.end, graph)
-            edge.side = CCW
+            edge.side = CCW #In GUI, boundary on the rhs
             inflx.add_edge(edge)
 
 

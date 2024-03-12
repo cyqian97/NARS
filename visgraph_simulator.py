@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import pyvisgraph as vg
+from numpy import array
 import pygame
 import datetime
 import glob
@@ -133,11 +134,21 @@ def draw_visible_mouse_vertices(pos, points, color, size):
 
 
 def draw_gap_sensor(robot):
-    center = (100, 200)
-    radius = 60
+    center = array((220, 250))
+    radius = 150
     pygame.draw.circle(gameDisplay,black,center,radius,3)
-    # for gap in robot.gaps:
-    #     dir = robo
+    pygame.draw.circle(gameDisplay,black,center,10)
+    if robot:
+        for gap in robot.gaps:
+            dir = gap.dir
+            start = center + radius*dir
+            end = center + (radius+6)*dir
+            text_center = center + (radius+16)*dir - array([5,5])
+            pygame.draw.line(gameDisplay, black, start,
+                            end, 3)
+            draw_text(str(gap.id), black,
+                  25, text_center[0],text_center[1])
+
 
 
 def draw_text(mode_txt, color, size, x, y):
@@ -454,8 +465,7 @@ def game_loop():
             draw_visible_mouse_vertices(
                 sim.mouse_point, sim.mouse_vertices, gray, 1)
 
-        if len(sim.path) >= 1:
-            draw_gap_sensor(sim.robot)
+        draw_gap_sensor(sim.robot)
         if len(sim.path) > 1:
             draw_polygon(sim.path, brown, 3, complete=False)
 

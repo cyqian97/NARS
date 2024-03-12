@@ -1,8 +1,18 @@
-Display gaps:
-    When the robot initialize
-    Then I should see a cirle showing all gaps with lables
+Gap associate:
+    After the robot moves along a straight line without any gap events
+    For each gap:
+        If the same vertex and side persist:
+            Accosiate
+        Else:
+            Check chasing or dechasing the gap
+            If chasing * side = 1:
+                chase the chain, accosiate the gap vertex with same side
+            If chasing * side = 1:
+                dechase the chain, accosiate the gap vertex with same side
 
-Implementation:
-    Draw a cirle on the top right corner
-    Draw short lines for each gap
-    Draw label at the end of each line
+Appear event:
+    If event is Appear
+    add the appear gap to list
+
+
+add the appear gap to list

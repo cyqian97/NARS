@@ -1,5 +1,6 @@
 from math import sqrt
-from numpy import array
+from numpy import array,ndarray
+
 
 
 class Point(object):
@@ -52,6 +53,8 @@ class Point(object):
     def __sub__(self, other):
         if isinstance(other, Point):
             return Point((self.x - other.x), (self.y - other.y))
+        elif isinstance(other,ndarray):
+            return Point((self.x - other[0]), (self.y - other[1]))
         else:
             raise TypeError("Both arguments must be Point")
 

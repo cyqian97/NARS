@@ -131,6 +131,14 @@ def draw_visible_mouse_vertices(pos, points, color, size):
                          (point.x, point.y), size)
 
 
+def draw_gap_sensor(robot):
+    center = (100,100)
+    radius = 50
+    for i in range(robot.gap_ids):
+        dir = robot
+
+
+
 def draw_text(mode_txt, color, size, x, y):
     font = pygame.font.SysFont(None, size)
     text = font.render(mode_txt, True, color)

@@ -1,8 +1,3 @@
-init gaps
-    remember chain_id
-assign info to each event (related gaps, side)
-run algorithm
-
-
-for each gap event
-    give a side (cross from l/r to l/r looking from the root)
+for each gap:
+    record initial gap vertex
+    

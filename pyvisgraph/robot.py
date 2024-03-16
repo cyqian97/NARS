@@ -62,9 +62,9 @@ class Robot():
             if p and p != path_edge.p2:  # path line contains the starting but not the ending point
                 _side = ccw(edge.p1, edge.p2, path_edge.p1)
                 if _side * edge.side == 1:
-                    events.append((p, edge, 'm'))
+                    events.append(GapEvent(p, edge, GapEventType.M))
                 elif _side * edge.side == -1:
-                    events.append((p, edge, 's'))
+                    events.append(GapEvent(p, edge, GapEventType.S))
                 else:
                     raise Exception(
                         f"ERROR: _side * edge.side should be 1 or -1, but is {_side * edge.side}")
@@ -74,16 +74,16 @@ class Robot():
             if p and p != path_edge.p2:
                 _side = ccw(edge.p1, edge.p2, path_edge.p1)
                 if _side * edge.side == 1:
-                    events.append((p, edge, 'a'))
+                    events.append(GapEvent(p, edge, GapEventType.A))
                 elif _side * edge.side == -1:
-                    events.append((p, edge, 'd'))
+                    events.append(GapEvent(p, edge, GapEventType.D))
                 else:
                     raise Exception(
                         f"ERROR: _side * edge.side should be 1 or -1, but is {_side * edge.side}")
 
-        events.sort(key=lambda p: edge_distance(p[0], path_edge.p1))
-        for p in events:
-            print(p[2], end=" ")
+        events.sort(key=lambda event: edge_distance(event.pos, path_edge.p1))
+        for event in events:
+            print(event.etype.name, end=" ")
         return events
 
 
@@ -103,10 +103,10 @@ class Gap():
 
 # class syntax
 class GapEventType(Enum):
-    APP = 0
-    DIS = 1
-    MER = 2
-    SPL = 3
+    A = 0
+    D = 1
+    M = 2
+    S = 3
 
 
 @dataclass

@@ -1,10 +1,10 @@
 
-from pyvisgraph.gap_sensor import gap_events
-from pyvisgraph import Point
-from pyvisgraph.visible_vertices import ccw
+from pyvisgraph import Point, Edge
+from pyvisgraph.visible_vertices import edge_cross_point, edge_distance, ccw, CCW, CW
 from numpy import array
 from numpy.linalg import norm
-
+from enum import Enum
+from dataclasses import dataclass
 
 class Robot():
     def __init__(self, vis_graph, p):
@@ -52,7 +52,40 @@ class Robot():
             path_edge, self.vis_graph.bitcomp, self.vis_graph.inflx)
         for event in events:
             if event[2] == 'a':
-                gap = Gap()
+                gap = Gap(self.assign_gap_id(),event[1].p1,event[1].side)
+
+
+    def gap_events(self, path_edge):
+        events = []
+        for edge in self.vis_graph.bitcomp.get_edges():
+            p = edge_cross_point(path_edge, edge)
+            if p and p != path_edge.p2:  # path line contains the starting but not the ending point
+                _side = ccw(edge.p1, edge.p2, path_edge.p1)
+                if _side * edge.side == 1:
+                    events.append((p, edge, 'm'))
+                elif _side * edge.side == -1:
+                    events.append((p, edge, 's'))
+                else:
+                    raise Exception(
+                        f"ERROR: _side * edge.side should be 1 or -1, but is {_side * edge.side}")
+
+        for edge in self.vis_graph.inflx.get_edges():
+            p = edge_cross_point(path_edge, edge)
+            if p and p != path_edge.p2:
+                _side = ccw(edge.p1, edge.p2, path_edge.p1)
+                if _side * edge.side == 1:
+                    events.append((p, edge, 'a'))
+                elif _side * edge.side == -1:
+                    events.append((p, edge, 'd'))
+                else:
+                    raise Exception(
+                        f"ERROR: _side * edge.side should be 1 or -1, but is {_side * edge.side}")
+
+        events.sort(key=lambda p: edge_distance(p[0], path_edge.p1))
+        for p in events:
+            print(p[2], end=" ")
+        return events
+
 
 
 class Gap():
@@ -66,3 +99,18 @@ class Gap():
         self.vertex = vertex
         self.dir = dir
         self.side = side
+
+
+# class syntax
+class GapEventType(Enum):
+    APP = 0
+    DIS = 1
+    MER = 2
+    SPL = 3
+
+
+@dataclass
+class GapEvent:
+    pos: Point
+    edge: Edge
+    etype: GapEventType

@@ -136,36 +136,36 @@ def draw_visible_mouse_vertices(pos, points, color, size):
 def draw_gap_sensor(robot):
     center = array((220, 250))
     radius = 150
-    pygame.draw.circle(gameDisplay,black,center,radius,3)
-    pygame.draw.circle(gameDisplay,black,center,10)
+    pygame.draw.circle(gameDisplay, black, center, radius, 3)
+    pygame.draw.circle(gameDisplay, black, center, 10)
     if robot:
         for gap in robot.gaps:
             dir = gap.dir
             start = center + radius*dir
             end = center + (radius+6)*dir
-            text_center = center + (radius+16)*dir - array([5,5])
+            text_center = center + (radius+16)*dir - array([5, 5])
             if gap.side == vg.CCW:
                 pygame.draw.line(gameDisplay, red, start,
-                                end, 3)
+                                 end, 3)
                 draw_text(str(gap.id), red,
-                    25, text_center[0],text_center[1])
+                          25, text_center[0], text_center[1])
             elif gap.side == vg.CW:
                 pygame.draw.line(gameDisplay, blue, start,
-                                end, 3)
+                                 end, 3)
                 draw_text(str(gap.id), blue,
-                    25, text_center[0],text_center[1])
+                          25, text_center[0], text_center[1])
             else:
                 pygame.draw.line(gameDisplay, black, start,
-                                end, 3)
+                                 end, 3)
                 draw_text(str(gap.id), black,
-                    25, text_center[0],text_center[1])
-
+                          25, text_center[0], text_center[1])
 
 
 def draw_text(mode_txt, color, size, x, y):
     font = pygame.font.SysFont(None, size)
     text = font.render(mode_txt, True, color)
     gameDisplay.blit(text, (x, y))
+
 
 def quit_event(event):
     if event.type == pygame.QUIT:
@@ -408,8 +408,8 @@ def game_loop():
                     if event.button == LEFT and sim.vis_graph.point_valid(_p):
                         sim.path.append(_p)
                         if len(sim.path) > 1:
-                            vg.gap_sensor.gap_events(
-                                vg.Edge(sim.path[-2], sim.path[-1]), sim.vis_graph.bitcomp, sim.vis_graph.inflx)
+                            sim.robot.gap_events(
+                                vg.Edge(sim.path[-2], sim.path[-1]))
                             print()
                         else:
                             sim.robot = vg.Robot(sim.vis_graph, _p)

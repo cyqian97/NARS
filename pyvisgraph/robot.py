@@ -47,12 +47,29 @@ class Robot():
         self.gap_count += 1
         return id
 
-    def gap_events(self, path_edge):
+    def move(self,path_edge):
         events = gap_events(
             path_edge, self.vis_graph.bitcomp, self.vis_graph.inflx)
         for event in events:
-            if event[2] == 'a':
-                gap = Gap(self.assign_gap_id(),event[1].p1,event[1].side)
+            if event.etype == GapEventType.A:
+                self.gaps.append(Gap(self.assign_gap_id(),event.edge.p1,event.edge.side))
+            elif event.etype == GapEventType.D:
+                _gap_vertex = event.edge.p1
+                while _gap_vertex:
+                    for _count, gap in enumerate(self.gaps):
+                        if gap.vertex == _gap_vertex:
+                            self.gaps.pop(_count)
+                            return
+                    if event.edge.side == CCW:
+                        _gap_vertex = self.vis_graph.graph.get_prev_point(_gap_vertex)
+                    elif event.edge.side == CW:
+                        _gap_vertex = self.vis_graph.graph.get_next_point(_gap_vertex)
+                    else:
+                        raise Exception(f"ERROR: Wrong edge side value. side should be {CCW} or {CW}, but is {event.edge.side}")
+        print([g.id for g in self.gaps])
+        
+
+
 
 
     def gap_events(self, path_edge):

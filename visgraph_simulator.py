@@ -408,9 +408,8 @@ def game_loop():
                     if event.button == LEFT and sim.vis_graph.point_valid(_p):
                         sim.path.append(_p)
                         if len(sim.path) > 1:
-                            sim.robot.gap_events(
+                            sim.robot.move(
                                 vg.Edge(sim.path[-2], sim.path[-1]))
-                            print()
                         else:
                             sim.robot = vg.Robot(sim.vis_graph, _p)
 

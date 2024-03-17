@@ -6,6 +6,7 @@ from numpy.linalg import norm
 from enum import Enum
 from dataclasses import dataclass
 
+
 class Robot():
     def __init__(self, vis_graph, p):
         self.vis_graph = vis_graph
@@ -19,8 +20,7 @@ class Robot():
         gap_vertices = self.vis_graph.find_visible(self.pos)
         current_gaps = []
         for v in gap_vertices:
-            dir = (v-self.pos).to_vec()
-            dir = dir/norm(dir)
+            dir = (v-self.pos).unit_vec()
             next_point = self.vis_graph.graph.get_next_point(v)
             if next_point:
                 side = ccw(self.pos, v, next_point)
@@ -47,30 +47,33 @@ class Robot():
         self.gap_count += 1
         return id
 
-    def move(self,path_edge):
-        events = gap_events(
-            path_edge, self.vis_graph.bitcomp, self.vis_graph.inflx)
+    def move(self, path_edge):
+        events = self.gap_events(path_edge)
         for event in events:
             if event.etype == GapEventType.A:
-                self.gaps.append(Gap(self.assign_gap_id(),event.edge.p1,event.edge.side))
+                self.gaps.append(
+                    Gap(self.assign_gap_id(), event.edge.p1, event.edge.side, 
+                    (event.edge.p1 - event.edge.p2).unit_vec()))
             elif event.etype == GapEventType.D:
                 _gap_vertex = event.edge.p1
-                while _gap_vertex:
+                _gap_found = False
+                while (not _gap_found) and _gap_vertex:
                     for _count, gap in enumerate(self.gaps):
                         if gap.vertex == _gap_vertex:
                             self.gaps.pop(_count)
-                            return
-                    if event.edge.side == CCW:
-                        _gap_vertex = self.vis_graph.graph.get_prev_point(_gap_vertex)
-                    elif event.edge.side == CW:
-                        _gap_vertex = self.vis_graph.graph.get_next_point(_gap_vertex)
-                    else:
-                        raise Exception(f"ERROR: Wrong edge side value. side should be {CCW} or {CW}, but is {event.edge.side}")
+                            _gap_found = True
+                            break
+                    if not _gap_found:
+                        if event.edge.side == CCW:
+                            _gap_vertex = self.vis_graph.graph.get_prev_point(
+                                _gap_vertex)
+                        elif event.edge.side == CW:
+                            _gap_vertex = self.vis_graph.graph.get_next_point(
+                                _gap_vertex)
+                        else:
+                            raise Exception(f"ERROR: Wrong edge side value. side should be {
+                                            CCW} or {CW}, but is {event.edge.side}")
         print([g.id for g in self.gaps])
-        
-
-
-
 
     def gap_events(self, path_edge):
         events = []
@@ -101,8 +104,8 @@ class Robot():
         events.sort(key=lambda event: edge_distance(event.pos, path_edge.p1))
         for event in events:
             print(event.etype.name, end=" ")
+        print()
         return events
-
 
 
 class Gap():

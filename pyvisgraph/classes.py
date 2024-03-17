@@ -1,5 +1,6 @@
 from math import sqrt
 from numpy import array,ndarray
+from numpy.linalg import norm
 
 
 
@@ -18,6 +19,10 @@ class Point(object):
 
     def to_vec(self):
         return array([self.x, self.y])
+
+    def unit_vec(self):
+        v = self.to_vec()
+        return v/norm(v)
 
     def __eq__(self, point):
         return point and self.x == point.x and self.y == point.y

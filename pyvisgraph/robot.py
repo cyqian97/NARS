@@ -58,6 +58,7 @@ class Robot():
                 _gap_found = False
                 while (not _gap_found) and _gap_vertex:
                     for _count, gap in enumerate(self.gaps):
+                        print(f"Checking gap #{gap.id}")
                         if gap.vertex == _gap_vertex:
                             self.gaps.pop(_count)
                             _gap_found = True
@@ -78,6 +79,7 @@ class Robot():
                 while (not _gap_found) and _gap_vertex:
                     for _count, gap in enumerate(self.gaps):
                         if gap.vertex == _gap_vertex:
+                            print(f"Gap #{gap.id} split")
                             gap.vertex = event.edge.p1
                             dual_edge = event.edge.dual
                             self.gaps.append(Gap(self.assign_gap_id(

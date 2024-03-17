@@ -39,7 +39,7 @@ T2 = 10.0**COLIN_TOLERANCE
 # TODO: change function name to bitangent_lines
 
 
-def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
+def visible_vertices(point, graph, scan="full"):
     """Returns list of Points in graph visible by point.
 
     If origin and/or destination Points are given, these will also be checked
@@ -50,10 +50,10 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
     """
     edges = graph.get_edges()
     points = graph.get_points()
-    if origin:
-        points.append(origin)
-    if destination:
-        points.append(destination)
+    # if origin:
+    #     points.append(origin)
+    # if destination:
+    #     points.append(destination)
     points.sort(key=lambda p: (angle(point, p), edge_distance(point, p)))
 
     # Initialize open_edges with any intersecting edges on the half line from
@@ -118,7 +118,6 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
             is_visible = not edge_in_polygon(point, p, graph)
 
         # Check the two ends of a bitangent line, the two edges on each side should be on the same side of the line
-        # Bitangent line between two point objects are ignored
         point_count = 0
         if is_visible:
             sides = []
@@ -152,7 +151,12 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
                     "len(_edges) should be 0 or 2, but is {}".format(len(_edges))
                 )
 
-        if is_visible and point_count < 2:
+        # Bitangent line between two point objects are ignored 
+        # but between cursor and point object is added
+        if scan == "half" and point_count > 1:
+            is_visible = False
+
+        if is_visible:
             visible.append(p)
 
         # Update open_edges - Add counter clock wise edges incident on p

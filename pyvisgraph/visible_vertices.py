@@ -118,6 +118,8 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
             is_visible = not edge_in_polygon(point, p, graph)
 
         # Check the two ends of a bitangent line, the two edges on each side should be on the same side of the line
+        # Bitangent line between two point objects are ignored
+        point_count = 0
         if is_visible:
             sides = []
             _edges = graph[p]
@@ -128,6 +130,7 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
                     is_visible = False
             elif len(_edges) == 0:
                 is_visible = True
+                point_count += 1
             else:
                 raise Exception(
                     "len(_edges) should be 0 or 2, but is {}".format(len(_edges))
@@ -143,12 +146,13 @@ def visible_vertices(point, graph, origin=None, destination=None, scan="full"):
                     is_visible = False
             elif len(_edges) == 0:
                 is_visible = True
+                point_count += 1
             else:
                 raise Exception(
                     "len(_edges) should be 0 or 2, but is {}".format(len(_edges))
                 )
 
-        if is_visible:
+        if is_visible and point_count < 2:
             visible.append(p)
 
         # Update open_edges - Add counter clock wise edges incident on p
@@ -208,7 +212,7 @@ def convex_chain(graph, conv_chain):
             p = p_n
 
         if chain_points:
-            # If vertices remain in the current chain after traverse the polygon, 
+            # If vertices remain in the current chain after traverse the polygon,
             # it means the chain continues from end of the polygon to the beginning of the polygon
             conv_chain.add_or_new_chain(
                 chain_id_init, chain_points, chain_edges)
@@ -244,28 +248,41 @@ def bitangent_complement(graph, visgraph, bitcomp):
                     if d < p2_d_min:
                         p2_d_min = d
                         p2_p_min = p
+        edge1 = None
+        edge2 = None
         if p1_p_min:
             _next_point = graph.get_next_point(bit_line.p1)
             if _next_point:
-                edge = Edge(bit_line.p1, p1_p_min)
-                edge.side = ccw(p1_p_min, bit_line.p1, _next_point) 
-                if edge.side == COLLINEAR:
-                    raise Exception("ERROR: Bitangent complement is collinear with a boundary edge")
-                bitcomp.add_edge(edge)
-
+                edge1 = Edge(bit_line.p1, p1_p_min)
+                edge1.side = ccw(p1_p_min, bit_line.p1, _next_point)
+                if edge1.side == COLLINEAR:
+                    raise Exception(
+                        "ERROR: Bitangent complement is collinear with a boundary edge")
+                bitcomp.add_edge(edge1)
         else:
             raise Exception("bitangent complement for p1 not found")
 
         if p2_p_min:
             _next_point = graph.get_next_point(bit_line.p2)
             if _next_point:
-                edge = Edge(bit_line.p2, p2_p_min)
-                edge.side = ccw(p2_p_min, bit_line.p2, _next_point)
-                if edge.side == COLLINEAR:
-                    raise Exception("ERROR: Bitangent complement is collinear with a boundary edge")
-                bitcomp.add_edge(edge)
+                edge2 = Edge(bit_line.p2, p2_p_min)
+                edge2.side = ccw(p2_p_min, bit_line.p2, _next_point)
+                if edge2.side == COLLINEAR:
+                    raise Exception(
+                        "ERROR: Bitangent complement is collinear with a boundary edge")
+                bitcomp.add_edge(edge2)
         else:
             raise Exception("bitangent complement for p2 not found")
+
+        if edge1 and edge2:
+            edge1.dual = edge2
+            edge2.dual = edge1
+        elif edge1 and not edge2:
+            edge1.dual = Edge(bit_line.p2, bit_line.p2)
+        elif edge2 and not edge1:
+            edge2.dual = Edge(bit_line.p1, bit_line.p1)
+        else:
+            raise Exception("ERROR: Both bitangent complements are None")
 
 
 def inflection_lines(graph, conv_chain, inflx):
@@ -274,12 +291,12 @@ def inflection_lines(graph, conv_chain, inflx):
         if chain.start:
             p_p = graph.get_prev_point(chain.start)
             edge = ray_cast(p_p, chain.start, graph)
-            edge.side = CW #In GUI, boundary on the lhs
+            edge.side = CW  # In GUI, boundary on the lhs
             inflx.add_edge(edge)
 
             p_n = graph.get_next_point(chain.end)
             edge = ray_cast(p_n, chain.end, graph)
-            edge.side = CCW #In GUI, boundary on the rhs
+            edge.side = CCW  # In GUI, boundary on the rhs
             inflx.add_edge(edge)
 
 

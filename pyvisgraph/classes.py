@@ -75,12 +75,13 @@ RIGHT = -1
 
 
 class Edge(object):
-    __slots__ = ("p1", "p2", "side")
+    __slots__ = ("p1", "p2", "side","dual")
 
     def __init__(self, point1, point2):
         self.p1 = point1
         self.p2 = point2
         self.side = None
+        self.dual = None
 
     def get_adjacent(self, point):
         if point == self.p1:

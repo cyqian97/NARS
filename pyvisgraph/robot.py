@@ -51,9 +51,8 @@ class Robot():
         events = self.gap_events(path_edge)
         for event in events:
             if event.etype == GapEventType.A:
-                self.gaps.append(
-                    Gap(self.assign_gap_id(), event.edge.p1, event.edge.side, 
-                    (event.edge.p1 - event.edge.p2).unit_vec()))
+                self.gaps.append(Gap(self.assign_gap_id(), event.edge.p1, event.edge.side,
+                                 (event.edge.p1 - event.edge.p2).unit_vec()))
             elif event.etype == GapEventType.D:
                 _gap_vertex = event.edge.p1
                 _gap_found = False
@@ -73,6 +72,29 @@ class Robot():
                         else:
                             raise Exception(f"ERROR: Wrong edge side value. side should be {
                                             CCW} or {CW}, but is {event.edge.side}")
+            elif event.etype == GapEventType.S:
+                _gap_vertex = event.edge.p1
+                _gap_found = False
+                while (not _gap_found) and _gap_vertex:
+                    for _count, gap in enumerate(self.gaps):
+                        if gap.vertex == _gap_vertex:
+                            gap.vertex = event.edge.p1
+                            dual_edge = event.edge.dual
+                            self.gaps.append(Gap(self.assign_gap_id(
+                            ), dual_edge.p1, dual_edge.side, (event.edge.p1 - event.edge.p2).unit_vec()))
+                            _gap_found = True
+                            break
+                    if not _gap_found:
+                        if event.edge.side == CCW:
+                            _gap_vertex = self.vis_graph.graph.get_prev_point(
+                                _gap_vertex)
+                        elif event.edge.side == CW:
+                            _gap_vertex = self.vis_graph.graph.get_next_point(
+                                _gap_vertex)
+                        else:
+                            raise Exception(f"ERROR: Wrong edge side value. side should be {
+                                            CCW} or {CW}, but is {event.edge.side}")
+
         print([g.id for g in self.gaps])
 
     def gap_events(self, path_edge):

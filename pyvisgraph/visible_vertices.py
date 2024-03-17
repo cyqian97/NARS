@@ -282,7 +282,7 @@ def bitangent_complement(graph, visgraph, bitcomp):
             edge1.dual = edge2
             edge2.dual = edge1
         elif edge1 and not edge2:
-            edge1.dual = Edge(bit_line.p2, bit_line.p2,side=0) # assign non-None side value for -1*side in robot.py
+            edge1.dual = Edge(bit_line.p2, bit_line.p2,side=0) # for point obstacle, the gap has no side, thus side = 0
         elif edge2 and not edge1:
             edge2.dual = Edge(bit_line.p1, bit_line.p1,side=0)
         else:

@@ -21,11 +21,10 @@ class Robot():
         current_gaps = []
         for v in gap_vertices:
             dir = (v-self.pos).unit_vec()
+            side = 0 # for point obstacle, the gap has no side, thus side = 0
             next_point = self.vis_graph.graph.get_next_point(v)
             if next_point:
                 side = ccw(self.pos, v, next_point)
-            else:
-                side = 0
             current_gaps.append(Gap(-1, v, side, dir))
         self.associate_gaps(current_gaps)
 
@@ -54,13 +53,13 @@ class Robot():
                 _gap = Gap(self.assign_gap_id(), event.edge.p1, event.edge.side,
                            (event.edge.p1 - event.edge.p2).unit_vec())
                 self.gaps.append(_gap)
-                print(f"Gap #{gap.id} appeared")
+                print(f"Gap #{_gap.id} appeared")
             elif event.etype == GapEventType.D:
-                gap_count, gap = self.find_gap(event)
+                gap_count, gap = self.find_gap(event.edge)
                 print(f"Gap #{gap.id} disappeared")
                 self.gaps.pop(gap_count)
             elif event.etype == GapEventType.S:
-                gap_count, gap = self.find_gap(event)
+                gap_count, gap = self.find_gap(event.edge)
                 gap.vertex = event.edge.p1
                 dual_edge = event.edge.dual
                 _gap = Gap(self.assign_gap_id(), 
@@ -68,28 +67,32 @@ class Robot():
                 self.gaps.append(_gap)
                 print(f"Gap #{gap.id} split into gap #{_gap.id}")
             elif event.etype == GapEventType.M:                
+                gap_count, gap = self.find_gap(event.edge)
                 gap.vertex = event.edge.p1
                 dual_edge = event.edge.dual
-                #TODO: find the gap with the dual edge
-                print(f"Gap #{_gap.id} merged into gap #{gap.id}")
-
+                dual_gap_count, dual_gap = self.find_gap(dual_edge,-1*dual_edge.side)
+                print(f"Gap #{dual_gap.id} merged into gap #{gap.id}")
+                self.gaps.pop(dual_gap_count)
         print([g.id for g in self.gaps])
 
-    def find_gap(self,gap_event):
-        gap_vertex = gap_event.edge.p1
+    #TODO: add gap side to this func
+    def find_gap(self,event_edge,gap_side = None):
+        if not gap_side:
+            gap_side = event_edge.side
+        gap_vertex = event_edge.p1
         while gap_vertex:
             for gap_count, gap in enumerate(self.gaps):
-                if gap.vertex == gap_vertex and gap.side == gap_event.edge.side:
+                if gap.vertex == gap_vertex and gap.side == gap_side:
                     return gap_count, gap
-            if gap_event.edge.side == CCW:
+            if event_edge.side == CCW:
                 gap_vertex = self.vis_graph.graph.get_prev_point(
                     gap_vertex)
-            elif gap_event.edge.side == CW:
+            elif event_edge.side == CW:
                 gap_vertex = self.vis_graph.graph.get_next_point(
                     gap_vertex)
             else:
                 raise Exception(f"ERROR: Wrong edge side value. side should be {
-                                CCW} or {CW}, but is {gap_event.edge.side}")
+                                CCW} or {CW}, but is {event_edge.side}")
         raise Exception(f"ERROR: Gap not found!")
 
     def gap_events(self, path_edge):

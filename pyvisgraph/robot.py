@@ -56,74 +56,41 @@ class Robot():
                 self.gaps.append(_gap)
                 print(f"Gap #{gap.id} appeared")
             elif event.etype == GapEventType.D:
-                _gap_vertex = event.edge.p1
-                _gap_found = False
-                while (not _gap_found) and _gap_vertex:
-                    for _count, gap in enumerate(self.gaps):
-                        if gap.vertex == _gap_vertex and gap.side == event.edge.side:
-                            print(f"Gap #{gap.id} disappeared")
-                            self.gaps.pop(_count)
-                            _gap_found = True
-                            break
-                    if not _gap_found:
-                        if event.edge.side == CCW:
-                            _gap_vertex = self.vis_graph.graph.get_prev_point(
-                                _gap_vertex)
-                        elif event.edge.side == CW:
-                            _gap_vertex = self.vis_graph.graph.get_next_point(
-                                _gap_vertex)
-                        else:
-                            raise Exception(f"ERROR: Wrong edge side value. side should be {
-                                            CCW} or {CW}, but is {event.edge.side}")
+                gap_count, gap = self.find_gap(event)
+                print(f"Gap #{gap.id} disappeared")
+                self.gaps.pop(gap_count)
             elif event.etype == GapEventType.S:
-                _gap_vertex = event.edge.p1
-                _gap_found = False
-                while (not _gap_found) and _gap_vertex:
-                    for _count, gap in enumerate(self.gaps):
-                        if gap.vertex == _gap_vertex and gap.side == event.edge.side:
-                            gap.vertex = event.edge.p1
-                            dual_edge = event.edge.dual
-                            _gap = Gap(self.assign_gap_id(), 
-                                dual_edge.p1, -1*dual_edge.side, (event.edge.p1 - event.edge.p2).unit_vec())
-                            self.gaps.append(_gap)
-                            print(f"Gap #{gap.id} split into gap #{_gap.id}")
-                            _gap_found = True
-                            break
-                    if not _gap_found:
-                        if event.edge.side == CCW:
-                            _gap_vertex = self.vis_graph.graph.get_prev_point(
-                                _gap_vertex)
-                        elif event.edge.side == CW:
-                            _gap_vertex = self.vis_graph.graph.get_next_point(
-                                _gap_vertex)
-                        else:
-                            raise Exception(f"ERROR: Wrong edge side value. side should be {
-                                            CCW} or {CW}, but is {event.edge.side}")
-            elif event.etype == GapEventType.M:
-                _gap_vertex = event.edge.p1
-                _gap_found = False
-                while (not _gap_found) and _gap_vertex:
-                    for _count, gap in enumerate(self.gaps):
-                        if gap.vertex == _gap_vertex and gap.side == event.edge.side:
-                            gap.vertex = event.edge.p1
-                            dual_edge = event.edge.dual
-                            #TODO: find the gap with the dual edge
-                            #TODO: dry the find gap function
-                            print(f"Gap #{_gap.id} merged into gap #{gap.id}")
-                            _gap_found = True
-                            break
-                    if not _gap_found:
-                        if event.edge.side == CCW:
-                            _gap_vertex = self.vis_graph.graph.get_prev_point(
-                                _gap_vertex)
-                        elif event.edge.side == CW:
-                            _gap_vertex = self.vis_graph.graph.get_next_point(
-                                _gap_vertex)
-                        else:
-                            raise Exception(f"ERROR: Wrong edge side value. side should be {
-                                            CCW} or {CW}, but is {event.edge.side}")
+                gap_count, gap = self.find_gap(event)
+                gap.vertex = event.edge.p1
+                dual_edge = event.edge.dual
+                _gap = Gap(self.assign_gap_id(), 
+                    dual_edge.p1, -1*dual_edge.side, (event.edge.p1 - event.edge.p2).unit_vec())
+                self.gaps.append(_gap)
+                print(f"Gap #{gap.id} split into gap #{_gap.id}")
+            elif event.etype == GapEventType.M:                
+                gap.vertex = event.edge.p1
+                dual_edge = event.edge.dual
+                #TODO: find the gap with the dual edge
+                print(f"Gap #{_gap.id} merged into gap #{gap.id}")
 
         print([g.id for g in self.gaps])
+
+    def find_gap(self,gap_event):
+        gap_vertex = gap_event.edge.p1
+        while gap_vertex:
+            for gap_count, gap in enumerate(self.gaps):
+                if gap.vertex == gap_vertex and gap.side == gap_event.edge.side:
+                    return gap_count, gap
+            if gap_event.edge.side == CCW:
+                gap_vertex = self.vis_graph.graph.get_prev_point(
+                    gap_vertex)
+            elif gap_event.edge.side == CW:
+                gap_vertex = self.vis_graph.graph.get_next_point(
+                    gap_vertex)
+            else:
+                raise Exception(f"ERROR: Wrong edge side value. side should be {
+                                CCW} or {CW}, but is {gap_event.edge.side}")
+        raise Exception(f"ERROR: Gap not found!")
 
     def gap_events(self, path_edge):
         events = []

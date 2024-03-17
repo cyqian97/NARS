@@ -107,8 +107,8 @@ class Robot():
                         if gap.vertex == _gap_vertex and gap.side == event.edge.side:
                             gap.vertex = event.edge.p1
                             dual_edge = event.edge.dual
-                            self.gaps.append(Gap(self.assign_gap_id(
-                            ), dual_edge.p1, -1*dual_edge.side, (event.edge.p1 - event.edge.p2).unit_vec()))
+                            #TODO: find the gap with the dual edge
+                            #TODO: dry the find gap function
                             print(f"Gap #{_gap.id} merged into gap #{gap.id}")
                             _gap_found = True
                             break

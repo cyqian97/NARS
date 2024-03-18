@@ -1,4 +1,6 @@
-Need to check gap side when calc the disappear event!!!!
+Need update gap vertex whenever they change!
+    Need extend conv chain edges
+
 
 Gap associate:
     After the robot moves along a straight line without any gap events

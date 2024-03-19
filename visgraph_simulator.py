@@ -41,6 +41,8 @@ white = (255, 255, 255)
 red = (237, 41, 57)
 darkred = (120, 0, 0)
 lightred = (255, 220, 220)
+lightgreen = (220, 255, 220)
+lightblue = (210, 230, 255)
 gray = (169, 169, 169)
 green = (0, 128, 0)
 blue = (17, 0, 187)
@@ -458,7 +460,9 @@ def game_loop():
         if sim.built and sim.show_static_visgraph:
             draw_edges_side(sim.vis_graph.bitcomp.get_edges(),
                             c_matlab[0], c_matlab[1], 2)
-            draw_edges(sim.vis_graph.visgraph.get_edges(), lightred, 1)
+            draw_edges_side(sim.vis_graph.extlines.get_edges(),
+                            lightblue, lightred, 1)
+            draw_edges(sim.vis_graph.visgraph.get_edges(), lightgreen, 1)
             draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 3)
             draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 2)
             for key, value in sim.vis_graph.conv_chains.chains.items():

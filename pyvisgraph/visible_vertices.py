@@ -151,7 +151,7 @@ def visible_vertices(point, graph, scan="full"):
                     "len(_edges) should be 0 or 2, but is {}".format(len(_edges))
                 )
 
-        # Bitangent line between two point objects are ignored 
+        # Bitangent line between two point objects are ignored
         # but between cursor and point object is added
         if scan == "half" and point_count > 1:
             is_visible = False
@@ -282,15 +282,15 @@ def bitangent_complement(graph, visgraph, bitcomp):
             edge1.dual = edge2
             edge2.dual = edge1
         elif edge1 and not edge2:
-            edge1.dual = Edge(bit_line.p2, bit_line.p2,side=0) # for point obstacle, the gap has no side, thus side = 0
+            # for point obstacle, the gap has no side, thus side = 0
+            edge1.dual = Edge(bit_line.p2, bit_line.p2, side=0)
         elif edge2 and not edge1:
-            edge2.dual = Edge(bit_line.p1, bit_line.p1,side=0)
+            edge2.dual = Edge(bit_line.p1, bit_line.p1, side=0)
         else:
             raise Exception("ERROR: Both bitangent complements are None")
 
 
 def inflection_lines(graph, conv_chain, inflx):
-
     for chain_id, chain in conv_chain.chains.items():
         if chain.start:
             p_p = graph.get_prev_point(chain.start)
@@ -302,6 +302,20 @@ def inflection_lines(graph, conv_chain, inflx):
             edge = ray_cast(p_n, chain.end, graph)
             edge.side = CCW  # In GUI, boundary on the rhs
             inflx.add_edge(edge)
+
+
+def extention_lines(graph, conv_chain, extlines):
+    # lines where the gap vertex changes
+    # They are extension of convex chains except for the inflection lines
+    for chain_id, chain in conv_chain.chains.items():
+        for edge in chain.edges:
+            extline = ray_cast(edge.p1, edge.p2, graph)
+            extline.side = CW
+            extlines.add_edge(extline)
+
+            extline = ray_cast(edge.p2, edge.p1, graph)
+            extline.side = CCW
+            extlines.add_edge(extline)
 
 
 def ray_cast(p1, p2, graph):

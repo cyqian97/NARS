@@ -26,19 +26,9 @@ class Robot():
             if next_point:
                 side = ccw(self.pos, v, next_point)
             current_gaps.append(Gap(-1, v, side, dir))
-        self.associate_gaps(current_gaps)
-
-    def associate_gaps(self, current_gaps, motion=None):
-        """Associate new gap sensor results to previous ones (in progress)
-
-        Args:
-            current_gaps (_type_): _description_
-            motion (_type_, optional): _description_. Defaults to None.
-        """
-        if not self.gaps:
-            for gap in current_gaps:
-                gap.id = self.assign_gap_id()
-                self.gaps.append(gap)
+        for gap in current_gaps:
+            gap.id = self.assign_gap_id()
+            self.gaps.append(gap)
         print([g.id for g in self.gaps])
 
     def assign_gap_id(self):
@@ -121,6 +111,18 @@ class Robot():
                     raise Exception(
                         f"ERROR: _side * edge.side should be 1 or -1, but is {_side * edge.side}")
 
+        for edge in self.vis_graph.extlines.get_edges():
+            p = edge_cross_point(path_edge, edge)
+            if p and p != path_edge.p2:
+                _side = ccw(edge.p1, edge.p2, path_edge.p1)
+                if _side * edge.side == 1:
+                    events.append(GapEvent(p, edge, GapEventType.N))
+                elif _side * edge.side == -1:
+                    events.append(GapEvent(p, edge, GapEventType.P))
+                else:
+                    raise Exception(
+                        f"ERROR: _side * edge.side should be 1 or -1, but is {_side * edge.side}")
+
         events.sort(key=lambda event: edge_distance(event.pos, path_edge.p1))
         for event in events:
             print(event.etype.name, end=" ")
@@ -147,6 +149,8 @@ class GapEventType(Enum):
     D = 1
     M = 2
     S = 3
+    N = 4
+    P = 5
 
 
 @dataclass

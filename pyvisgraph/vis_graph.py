@@ -39,6 +39,7 @@ from pyvisgraph.visible_vertices import (
     convex_chain,
     bitangent_complement,
     inflection_lines,
+    extention_lines,
     edge_distance,
     intersect_point,
     on_segment,
@@ -94,6 +95,7 @@ class VisGraph(object):
         self.conv_chains = ChainGraph()
         self.bitcomp = Graph()
         self.inflx = Graph()
+        self.extlines = Graph()
 
         points = self.graph.get_points()
         batch_size = 10
@@ -111,6 +113,7 @@ class VisGraph(object):
             _conv_chain(self.graph, self.conv_chains)
             _bit_comp(self.graph, self.visgraph, self.bitcomp)
             _inflx_lines(self.graph,self.conv_chains,self.inflx)
+            _ext_lines(self.graph,self.conv_chains,self.extlines)
 
         else:
             pool = Pool(workers)
@@ -216,3 +219,6 @@ def _bit_comp(graph, visgraph, bitcomp):
 
 def _inflx_lines(graph, conv_chain, inflx):
     inflection_lines(graph, conv_chain, inflx)
+
+def _ext_lines(graph,conv_chain,extlines):
+    extention_lines(graph, conv_chain, extlines)

@@ -1,6 +1,12 @@
 Need update gap vertex whenever they change!
     Need extend conv chain edges
 
+1. Init gap detections
+2. If a extline is crossed
+    2.1 Check side to decide move prev or next
+    2.2 update dir of each gap
+3. For gap events
+    3.1 only check gap vertex
 
 Gap associate:
     After the robot moves along a straight line without any gap events

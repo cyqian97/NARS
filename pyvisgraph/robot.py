@@ -53,9 +53,8 @@ class Robot():
                         self.vis_graph.graph.get_prev_point(event.edge.p1))
                     gap.vertex = event.edge.p1
                 else:
-                    raise Exception(f"event.edge.side must be {CCW} or {
-                                    CW}, but is {event.edge.side}")
-                print(f"Gap #{gap.id} proceed")
+                    raise Exception(f"event.edge.side must be {CCW} or {CW}, but is {event.edge.side}")
+                # print(f"Gap #{gap.id} proceed")
             elif event.etype == GapEventType.P:
                 if event.edge.side == CW:
                     gap_count, gap = self.find_gap(event.edge.p1)
@@ -66,9 +65,8 @@ class Robot():
                         self.vis_graph.graph.get_next_point(event.edge.p1))
                     gap.vertex = event.edge.p1
                 else:
-                    raise Exception(f"event.edge.side must be {CCW} or {
-                                    CW}, but is {event.edge.side}")
-                print(f"Gap #{gap.id} retreat")
+                    raise Exception(f"event.edge.side must be {CCW} or {CW}, but is {event.edge.side}")
+                # print(f"Gap #{gap.id} retreat")
             elif event.etype == GapEventType.A:
                 _gap = Gap(self.assign_gap_id(), event.edge.p1, event.edge.side,
                            (event.edge.p1 - event.edge.p2).unit_vec())

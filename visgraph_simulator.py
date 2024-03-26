@@ -244,7 +244,7 @@ def help_screen():
         # draw_text("    Left click to set start point, right click to set end point.", black, 25, startxi+10, startyi+320)
         # draw_text("    Hold left/right mouse button down to drag start/end point.", black, 25, startxi+10, startyi+355)
         draw_text(
-            "M - TOGGLE GAP VERTICES FROM MOUSE CURSOR",
+            "P - TOGGLE PATH MODE",
             black,
             25,
             startxi + 10,
@@ -370,7 +370,7 @@ def game_loop():
                     help_screen()
                 # elif event.key == pygame.K_g:
                 #     sim.show_static_visgraph = not sim.show_static_visgraph
-                elif event.key == pygame.K_m:
+                elif event.key == pygame.K_p:
                     sim.toggle_draw_mode()
                     sim.show_mouse_visgraph = not sim.show_mouse_visgraph
                     sim.toggle_path_mode()
@@ -486,7 +486,7 @@ def game_loop():
         if sim.mode_draw:
             draw_text("-- DRAW MODE --", black, 25, 5, 5)
         elif sim.mode_path:
-            draw_text("-- SHORTEST PATH MODE --", black, 25, 5, 5)
+            draw_text("-- PATH MODE --", black, 25, 5, 5)
         else:
             draw_text("-- VIEW MODE --", black, 25, 5, 5)
 

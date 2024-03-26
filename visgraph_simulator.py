@@ -288,9 +288,12 @@ class Simulator:
 
     def close_polygon(self):
         if len(self.work_polygon) >= 1:
-            self.polygons.append(self.work_polygon)
-            self.work_polygon = []
-            self.build()
+            if not self.is_edge_intersect(vg.Edge(self.work_polygon[-1], self.work_polygon[0]),close_edge=True):
+                self.polygons.append(self.work_polygon)
+                self.work_polygon = []
+                self.build()
+            else:
+                print("ERROR: Edge cross!")
 
     def draw_point_undo(self):
         if len(self.work_polygon) > 0:
@@ -312,6 +315,24 @@ class Simulator:
         self.path = []
         self.start_point = []
         self.end_point = []
+
+    def is_edge_intersect(self, edge, close_edge=False):
+        for polygon in self.polygons:
+            _l = len(polygon)
+            for i, _point in enumerate(polygon):
+                _edge = vg.Edge(_point, polygon[(i+1) % _l])
+                if vg.edge_cross_point(edge, _edge):
+                    return True
+        if len(self.work_polygon) > 2:
+            for i in range(len(self.work_polygon)-2):
+                _edge = vg.Edge(self.work_polygon[i], self.work_polygon[i+1])
+                _crose = vg.edge_cross_point(edge, _edge)
+                if not close_edge:
+                    if _crose: 
+                        return True
+                elif _crose and _crose != edge.p2:
+                    return True
+        return False
 
     def save_map(self):
         # Prompt the user for input
@@ -379,8 +400,6 @@ def game_loop():
                     sim.toggle_draw_mode()
                 elif event.key == pygame.K_s:
                     sim.save_map()
-                elif event.key == pygame.K_l:
-                    sim.load_map()
                 #     sim.toggle_path_mode()
 
             if sim.mode_draw:
@@ -389,15 +408,26 @@ def game_loop():
                         sim.draw_point_undo()
                     elif event.key == pygame.K_c:
                         sim.clear_all()
+                    elif event.key == pygame.K_l:
+                        sim.load_map()
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if event.button == LEFT:
-                        if len(sim.polygons) > 0:
-                            if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
-                                print(f"({pos[0]}, {pos[1]})")
-                                sim.work_polygon.append(
-                                    vg.Point(pos[0], pos[1]))
+                        _point = vg.Point(pos[0], pos[1])
+                        _is_edge_intersect = False
+                        if len(sim.work_polygon) > 0:
+                            _is_edge_intersect = sim.is_edge_intersect(
+                                vg.Edge(_point, sim.work_polygon[-1]))
+                        print(f"_is_edge_intersect = {_is_edge_intersect}")
+                        if not _is_edge_intersect:
+                            if len(sim.polygons):
+                                if sim.vis_graph.point_valid(_point):
+                                    sim.work_polygon.append(_point)
+                                else:
+                                    print("ERROR: Point invalid!")
+                            else:
+                                sim.work_polygon.append(_point)
                         else:
-                            sim.work_polygon.append(vg.Point(pos[0], pos[1]))
+                            print("ERROR: Edge cross!")
                     elif event.button == RIGHT:
                         sim.close_polygon()
 
@@ -408,12 +438,35 @@ def game_loop():
                 if event.type == pygame.MOUSEBUTTONUP:
                     _p = vg.Point(pos[0], pos[1])
                     if event.button == LEFT and sim.vis_graph.point_valid(_p):
-                        sim.path.append(_p)
-                        if len(sim.path) > 1:
-                            sim.robot.move(
-                                vg.Edge(sim.path[-2], sim.path[-1]))
+                        if len(sim.path) > 0:
+                            if not sim.is_edge_intersect(vg.Edge(sim.path[-1], _p)):
+                                sim.path.append(_p)
+                                with open('path.csv', 'a') as file:
+                                    file.write(f'{pos[0]},{pos[1]}\n')
+                                sim.robot.move(
+                                    vg.Edge(sim.path[-2], sim.path[-1]))
+                            else:
+                                print("ERROR: Edge cross!")
                         else:
+                            sim.path.append(_p)
+                            with open('path.csv', 'w') as file:
+                                file.write(f'{pos[0]},{pos[1]}\n')
                             sim.robot = vg.Robot(sim.vis_graph, _p)
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_l:
+                        with open('path.csv', 'r') as file:
+                            for line in file:
+                                parts = line.strip().split(',')
+                                _p = vg.Point(int(parts[0]), int(parts[1]))
+                                if len(sim.path) > 0:
+                                    sim.path.append(_p)
+                                    sim.robot.move(vg.Edge(sim.path[-2], sim.path[-1]))
+                                else:
+                                    sim.path.append(_p)
+                                    sim.robot = vg.Robot(sim.vis_graph, _p)
+
+
+                                            
 
             # if sim.mode_path and sim.built:
             #     if event.type == pygame.MOUSEBUTTONUP or any(
@@ -432,7 +485,7 @@ def game_loop():
                 if event.type == pygame.MOUSEMOTION:
                     if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
                         sim.mouse_point = vg.Point(pos[0], pos[1])
-                        sim.mouse_vertices = sim.vis_graph.find_visible(
+                        sim.mouse_vertices = sim.vis_graph.find_bitangent(
                             sim.mouse_point)
 
         # Display loop

@@ -32,7 +32,7 @@ from pyvisgraph.classes import Edge
 from pyvisgraph.graph import PolygonGraph, ChainGraph, Graph
 from pyvisgraph.shortest_path import shortest_path
 from pyvisgraph.visible_vertices import (
-    visible_vertices,
+    bitangent_lines,
     point_in_polygon,
     point_in_wall,
     point_valid,
@@ -108,7 +108,7 @@ class VisGraph(object):
                 ],
                 disable=not status,
             ):
-                for edge in _vis_graph(self.graph, batch):
+                for edge in _bitangent_lines(self.graph, batch):
                     self.visgraph.add_edge(edge)
             _conv_chain(self.graph, self.conv_chains)
             _bit_comp(self.graph, self.visgraph, self.bitcomp)
@@ -124,7 +124,7 @@ class VisGraph(object):
 
             results = list(
                 tqdm(
-                    pool.imap(_vis_graph_wrapper, batches),
+                    pool.imap(_bitangent_lines_wrapper, batches),
                     total=len(batches),
                     disable=not status,
                 )
@@ -135,16 +135,15 @@ class VisGraph(object):
 
     
 
-    def find_visible(self, point):
+    def find_bitangent(self, point):
         """Find vertices visible from point."""
-
-        return visible_vertices(point, self.graph)
+        return bitangent_lines(point, self.graph)
 
     def update(self, points, origin=None, destination=None):
         """Update visgraph by checking visibility of Points in list points."""
 
         for p in points:
-            for v in visible_vertices(
+            for v in bitangent_lines(
                 p, self.graph, origin=origin, destination=destination
             ):
                 self.visgraph.add_edge(Edge(p, v))
@@ -166,10 +165,10 @@ class VisGraph(object):
         dest = None if dest_exists else destination
         add_to_visg = PolygonGraph([])
         if not origin_exists:
-            for v in visible_vertices(origin, self.graph, destination=dest):
+            for v in bitangent_lines(origin, self.graph, destination=dest):
                 add_to_visg.add_edge(Edge(origin, v))
         if not dest_exists:
-            for v in visible_vertices(destination, self.graph, origin=orgn):
+            for v in bitangent_lines(destination, self.graph, origin=orgn):
                 add_to_visg.add_edge(Edge(destination, v))
         return shortest_path(self.visgraph, origin, destination, add_to_visg)
 
@@ -196,17 +195,17 @@ class VisGraph(object):
         return closest_point(point, self.graph, polygon_id, length)
 
 
-def _vis_graph_wrapper(args):
+def _bitangent_lines_wrapper(args):
     try:
-        return _vis_graph(*args)
+        return _bitangent_lines(*args)
     except KeyboardInterrupt:
         pass
 
 
-def _vis_graph(graph, points):
+def _bitangent_lines(graph, points):
     visible_edges = []
     for p1 in points:
-        for p2 in visible_vertices(p1, graph, scan="half"):
+        for p2 in bitangent_lines(p1, graph, scan="half"):
             visible_edges.append(Edge(p1, p2))
     return visible_edges
 

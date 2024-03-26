@@ -17,7 +17,7 @@ class Robot():
         return
 
     def detect_gaps(self):
-        gap_vertices = self.vis_graph.find_visible(self.pos)
+        gap_vertices = self.vis_graph.find_bitangent(self.pos)
         current_gaps = []
         for v in gap_vertices:
             dir = (v-self.pos).unit_vec()

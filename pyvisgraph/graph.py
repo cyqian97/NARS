@@ -25,7 +25,7 @@ SOFTWARE.
 from collections import defaultdict
 import sys
 from pyvisgraph.classes import Point, Edge, Chain
-from pyvisgraph.visible_vertices import polygon_crossing
+from pyvisgraph.visible_vertices import polygon_crossing,edge_cross_point
 
 eps = 0.01
 
@@ -80,6 +80,12 @@ class Graph(object):
     def add_points(self, points):
         for point in points:
             self.add_point(point)
+
+    def is_edge_intersect(self,edge):
+        for _edge in self.edges:
+            if edge_cross_point(_edge,edge):
+                return True
+        return False
 
     def __contains__(self, item):
         if isinstance(item, Point):

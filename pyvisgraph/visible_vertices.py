@@ -39,7 +39,7 @@ T2 = 10.0**COLIN_TOLERANCE
 # TODO: change function name to bitangent_lines
 
 
-def visible_vertices(point, graph, scan="full"):
+def bitangent_lines(point, graph, scan="full"):
     """Returns list of Points in graph visible by point.
 
     If origin and/or destination Points are given, these will also be checked

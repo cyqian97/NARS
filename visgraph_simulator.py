@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import pyvisgraph as vg
+from robot import Robot
 from numpy import array
 import pygame
 import datetime
@@ -464,7 +465,7 @@ def game_loop():
                             sim.path.append(_p)
                             with open('path.csv', 'w') as file:
                                 file.write(f'{pos[0]},{pos[1]}\n')
-                            sim.robot = vg.Robot(sim.vis_graph, _p)
+                            sim.robot = Robot(sim.vis_graph, _p)
                 elif event.type == pygame.KEYUP and event.key == pygame.K_l:
                     is_reading_path = True
                     print("Press Enter to continue...")
@@ -493,7 +494,7 @@ def game_loop():
                     sim.robot.move(vg.Edge(sim.path[-2], sim.path[-1]))
                 else:
                     sim.path.append(_p)
-                    sim.robot = vg.Robot(sim.vis_graph, _p)
+                    sim.robot = Robot(sim.vis_graph, _p)
             except StopIteration:
                 is_reading_path = False
                 keep_reading_path = False

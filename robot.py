@@ -1,6 +1,5 @@
 
-from pyvisgraph import Point, Edge
-from pyvisgraph.visible_vertices import edge_cross_point, edge_distance, ccw, CCW, CW
+from pyvisgraph import Point, Edge, edge_cross_point, edge_distance, ccw, CCW, CW
 from numpy import array
 from numpy.linalg import norm
 from enum import Enum

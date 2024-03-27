@@ -288,7 +288,7 @@ class Simulator:
 
     def close_polygon(self):
         if len(self.work_polygon) >= 1:
-            if not self.is_edge_intersect(vg.Edge(self.work_polygon[-1], self.work_polygon[0]),close_edge=True):
+            if not self.is_edge_intersect(vg.Edge(self.work_polygon[-1], self.work_polygon[0]), close_edge=True):
                 self.polygons.append(self.work_polygon)
                 self.work_polygon = []
                 self.build()
@@ -328,7 +328,7 @@ class Simulator:
                 _edge = vg.Edge(self.work_polygon[i], self.work_polygon[i+1])
                 _crose = vg.edge_cross_point(edge, _edge)
                 if not close_edge:
-                    if _crose: 
+                    if _crose:
                         return True
                 elif _crose and _crose != edge.p2:
                     return True
@@ -375,11 +375,24 @@ class Simulator:
             print("No files found matching the pattern.")
 
 
+def read_path():
+    with open('path.csv', 'r') as file:
+        for line in file:
+            parts = line.strip().split(',')
+            yield vg.Point(int(parts[0]), int(parts[1]))
+
+
 def game_loop():
     sim = Simulator()
     gameExit = False
 
     cursor_pos = None
+
+    path_reader = None
+
+    is_reading_path = False
+    keep_reading_path = False
+    is_display_update = True
 
     while not gameExit:
         # Event loop
@@ -435,7 +448,7 @@ def game_loop():
                 cursor_pos = pos
 
             if sim.mode_path and sim.built:
-                if event.type == pygame.MOUSEBUTTONUP:
+                if (not is_reading_path) and event.type == pygame.MOUSEBUTTONUP:
                     _p = vg.Point(pos[0], pos[1])
                     if event.button == LEFT and sim.vis_graph.point_valid(_p):
                         if len(sim.path) > 0:
@@ -452,21 +465,40 @@ def game_loop():
                             with open('path.csv', 'w') as file:
                                 file.write(f'{pos[0]},{pos[1]}\n')
                             sim.robot = vg.Robot(sim.vis_graph, _p)
-                elif event.type == pygame.KEYUP:
-                    if event.key == pygame.K_l:
-                        with open('path.csv', 'r') as file:
-                            for line in file:
-                                parts = line.strip().split(',')
-                                _p = vg.Point(int(parts[0]), int(parts[1]))
-                                if len(sim.path) > 0:
-                                    sim.path.append(_p)
-                                    sim.robot.move(vg.Edge(sim.path[-2], sim.path[-1]))
-                                else:
-                                    sim.path.append(_p)
-                                    sim.robot = vg.Robot(sim.vis_graph, _p)
+                elif event.type == pygame.KEYUP and event.key == pygame.K_l:
+                    is_reading_path = True
+                    print("Press Enter to continue...")
+                    
+                elif is_reading_path and event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                    keep_reading_path = True
+                    
+                elif is_reading_path and event.type == pygame.KEYUP and event.key == pygame.K_RETURN:
+                    keep_reading_path = False
+                    
 
-
-                                            
+            if sim.show_mouse_visgraph and sim.built:
+                if event.type == pygame.MOUSEMOTION:
+                    if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
+                        sim.mouse_point = vg.Point(pos[0], pos[1])
+                        sim.mouse_vertices = sim.vis_graph.find_bitangent(
+                            sim.mouse_point)
+        
+        if keep_reading_path and is_display_update:
+            if path_reader is None:
+                path_reader = read_path()
+            try:
+                _p = next(path_reader)
+                if len(sim.path) > 0:
+                    sim.path.append(_p)
+                    sim.robot.move(vg.Edge(sim.path[-2], sim.path[-1]))
+                else:
+                    sim.path.append(_p)
+                    sim.robot = vg.Robot(sim.vis_graph, _p)
+            except StopIteration:
+                is_reading_path = False
+                keep_reading_path = False
+                print("Path reading complete")
+            is_display_update = False
 
             # if sim.mode_path and sim.built:
             #     if event.type == pygame.MOUSEBUTTONUP or any(
@@ -480,13 +512,6 @@ def game_loop():
             #             sim.path = sim.vis_graph.path(
             #                 sim.start_point, sim.end_point
             #             )
-
-            if sim.show_mouse_visgraph and sim.built:
-                if event.type == pygame.MOUSEMOTION:
-                    if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
-                        sim.mouse_point = vg.Point(pos[0], pos[1])
-                        sim.mouse_vertices = sim.vis_graph.find_bitangent(
-                            sim.mouse_point)
 
         # Display loop
         gameDisplay.fill(white)
@@ -544,6 +569,8 @@ def game_loop():
             draw_text("-- VIEW MODE --", black, 25, 5, 5)
 
         pygame.display.update()
+
+        is_display_update = True
         clock.tick(20)
 
 

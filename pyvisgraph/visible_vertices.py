@@ -35,6 +35,7 @@ COLLINEAR = 0
 COLIN_TOLERANCE = 10
 T = 10**COLIN_TOLERANCE
 T2 = 10.0**COLIN_TOLERANCE
+T_L = 10**(-COLIN_TOLERANCE)
 
 # TODO: change function name to bitangent_lines
 
@@ -567,8 +568,8 @@ def ccw(A, B, C):
 def on_segment(p, q, r):
     """Given three colinear points p, q, r, the function checks if point q
     lies on line segment 'pr'."""
-    if (q.x <= max(p.x, r.x)) and (q.x >= min(p.x, r.x)):
-        if (q.y <= max(p.y, r.y)) and (q.y >= min(p.y, r.y)):
+    if (q.x <= max(p.x, r.x) + T_L) and (q.x >= min(p.x, r.x) - T_L):
+        if (q.y <= max(p.y, r.y)+T_L) and (q.y >= min(p.y, r.y)-T_L):
             return True
     return False
 

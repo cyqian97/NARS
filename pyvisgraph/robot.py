@@ -42,6 +42,7 @@ class Robot():
 
     def move(self, path_edge):
         events = self.gap_events(path_edge)
+        print(f"path_edge.p1.x = {path_edge.p1.x}")
         for event in events:
             if event.etype == GapEventType.N:
                 if event.edge.side == CCW:

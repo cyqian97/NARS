@@ -1,9 +1,7 @@
 
 from pyvisgraph import Point, Edge, edge_cross_point, edge_distance, ccw, CCW, CW
-from numpy import array
-from numpy.linalg import norm
-from enum import Enum
-from dataclasses import dataclass
+from algorithm import *
+from gap_classes import *
 
 
 class Robot():
@@ -13,6 +11,8 @@ class Robot():
         self.pos = p
         self.gap_count = 0
         self.detect_gaps()
+        self.alg = algorithm_1(self.gaps)
+        print(self.alg)
         return
 
     def detect_gaps(self):
@@ -41,7 +41,7 @@ class Robot():
 
     def move(self, path_edge):
         events = self.gap_events(path_edge)
-        print(f"path_edge.p1.x = {path_edge.p1.x}")
+        event_info = None
         for event in events:
             if event.etype == GapEventType.N:
                 if event.edge.side == CCW:
@@ -71,9 +71,11 @@ class Robot():
                 _gap = Gap(self.assign_gap_id(), event.edge.p1, event.edge.side,
                            (event.edge.p1 - event.edge.p2).unit_vec())
                 self.gaps.append(_gap)
+                event_info = EventInfo(event.etype,_gap.id,None)
                 print(f"Gap #{_gap.id} appeared")
             elif event.etype == GapEventType.D:
                 gap_count, gap = self.find_gap(event.edge.p1)
+                event_info = EventInfo(event.etype,gap.id,None)
                 print(f"Gap #{gap.id} disappeared")
                 self.gaps.pop(gap_count)
             elif event.etype == GapEventType.S:
@@ -83,14 +85,24 @@ class Robot():
                 _gap = Gap(self.assign_gap_id(),
                            dual_edge.p1, -1*dual_edge.side, (event.edge.p1 - event.edge.p2).unit_vec())
                 self.gaps.append(_gap)
+                event_info = EventInfo(event.etype,gap.id,_gap.id)
                 print(f"Gap #{gap.id} split into gap #{_gap.id}")
             elif event.etype == GapEventType.M:
                 gap_count, gap = self.find_gap(event.edge.p1)
                 # gap.vertex = event.edge.p1
                 dual_edge = event.edge.dual
                 dual_gap_count, dual_gap = self.find_gap(dual_edge.p1)
+                event_info = EventInfo(event.etype,gap.id,dual_gap.id)
                 print(f"Gap #{dual_gap.id} merged into gap #{gap.id}")
                 self.gaps.pop(dual_gap_count)
+            
+            self.pos = event.pos
+            self.update_dir()
+            if not is_tracking_events(event):
+                self.alg(event_info)
+                print(self.alg)
+        
+            
         self.pos = path_edge.p2
         self.update_dir()
         print([g.id for g in self.gaps])
@@ -164,31 +176,4 @@ class Robot():
         return events
 
 
-class Gap():
-    __slots__ = ("id", "vertex", "side", "dir")
 
-    def __init__(self, id, vertex, side, dir):
-        assert isinstance(id, int)
-        assert isinstance(vertex, Point)
-        assert (norm(dir)-1) > -1e-10 and (norm(dir)-1) < 1e-10
-        self.id = id
-        self.vertex = vertex
-        self.dir = dir
-        self.side = side
-
-
-# class syntax
-class GapEventType(Enum):
-    A = 0
-    D = 1
-    M = 2
-    S = 3
-    N = 4
-    P = 5
-
-
-@dataclass
-class GapEvent:
-    pos: Point
-    edge: Edge
-    etype: GapEventType

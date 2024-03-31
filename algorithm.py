@@ -78,7 +78,7 @@ class algorithm_1():
 
     def __str__(self):
         s = ""
-        s += str(self.gap_id_map) + "\n"
+        s += "Gap ID Map: " + str(self.gap_id_map) + "\n"
         for key, val in self.gap_lists.items():
             s += (f"{key}: ")
             s += str(val)

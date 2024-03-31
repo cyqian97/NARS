@@ -40,10 +40,11 @@ class Robot():
             gap.dir = (gap.vertex-self.pos).unit_vec()
 
     def move(self, path_edge):
-        print(f"move: {path_edge}")
+        print("\n====================")
+        print(f"Move: {path_edge}")
         events = self.gap_events(path_edge)
         event_info = None
-        for event in events:
+        for i, event in enumerate(events):
             if event.etype == GapEventType.N:
                 if event.edge.side == CCW:
                     gap_count, gap = self.find_gap(event.edge.p1)
@@ -73,11 +74,11 @@ class Robot():
                            (event.edge.p1 - event.edge.p2).unit_vec())
                 self.gaps.append(_gap)
                 event_info = EventInfo(event.etype,_gap.id,None)
-                print(f"Gap #{_gap.id} appeared")
+                print(f"Event {i}: Gap #{_gap.id} appeared")
             elif event.etype == GapEventType.D:
                 gap_count, gap = self.find_gap(event.edge.p1)
                 event_info = EventInfo(event.etype,gap.id,None)
-                print(f"Gap #{gap.id} disappeared")
+                print(f"Event {i}: Gap #{gap.id} disappeared")
                 self.gaps.pop(gap_count)
             elif event.etype == GapEventType.S:
                 gap_count, gap = self.find_gap(event.edge.p1)
@@ -87,14 +88,14 @@ class Robot():
                            dual_edge.p1, -1*dual_edge.side, (event.edge.p1 - event.edge.p2).unit_vec())
                 self.gaps.append(_gap)
                 event_info = EventInfo(event.etype,gap.id,_gap.id)
-                print(f"Gap #{gap.id} split into gap #{_gap.id}")
+                print(f"Event {i}: Gap #{gap.id} split into gap #{_gap.id}")
             elif event.etype == GapEventType.M:
                 gap_count, gap = self.find_gap(event.edge.p1)
                 # gap.vertex = event.edge.p1
                 dual_edge = event.edge.dual
                 dual_gap_count, dual_gap = self.find_gap(dual_edge.p1)
                 event_info = EventInfo(event.etype,gap.id,dual_gap.id)
-                print(f"Gap #{dual_gap.id} merged into gap #{gap.id}")
+                print(f"Event {i}: Gap #{dual_gap.id} merged into gap #{gap.id}")
                 self.gaps.pop(dual_gap_count)
             
             self.pos = event.pos
@@ -106,6 +107,7 @@ class Robot():
             
         self.pos = path_edge.p2
         self.update_dir()
+        print("Gap Sensor: ", end="")
         print([g.id for g in self.gaps])
 
     def find_gap(self, event_vertex):
@@ -177,6 +179,7 @@ class Robot():
                         f"ERROR: _side must be 1 or -1, but is {_side}")
 
         events.sort(key=lambda event: edge_distance(event.pos, path_edge.p1))
+        print("Events summary: " ,end = "")
         for event in events:
             print(event.etype.name, end=" ")
         print()

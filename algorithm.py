@@ -38,12 +38,12 @@ class algorithm_1():
                 new_list = self.add_new_gap(gap2_id)
                 new_list.add_pointer(gap1_id)
             else:
-                gap2_id = gap_list_1.star_pointer.next.gap_id
+                gap2_id = gap_list_1.star_pointer.next.gap_id # use gap_id at previous merge
                 gap_list_2 = self.gap_lists[gap2_id]
                 gap_list_1.star_pointer.move_next()
                 gap_list_2.add_star_pointer(gap1_id)
                 self.vis_gaps.append(gap2_id)
-                self.gap_id_map[event_info.gap2_id] = gap2_id
+                self.add_new_id_map(event_info.gap2_id,gap2_id)
 
         elif event_info.etype == GapEventType.M:
             gap_list_1 = self.gap_lists[gap1_id]
@@ -53,7 +53,8 @@ class algorithm_1():
                 gap_list_2.add_pointer(gap1_id)
                 self.remove_invis_gap(gap2_id)
             else:
-                self.remove_invis_gap(gap2_id)
+                self.remove_invis_gap(gap2_id) # use the latest gap id, since when it appears, we don't know its the previous one
+                self.add_new_id_map(gap2_id, gap_list_1.star_pointer.prev.gap_id)
                 gap_list_1.star_pointer.move_prev()
 
     def add_new_gap(self, gap_id, is_appear=False):
@@ -66,6 +67,10 @@ class algorithm_1():
             new_list.insert(END, PREV)
         return new_list
 
+    def add_new_id_map(self,gap_id_new,gap_id_old):
+        if gap_id_new is not gap_id_old:
+            self.gap_id_map[gap_id_new] = gap_id_old
+    
     def remove_invis_gap(self, gap_id):
         assert gap_id in self.vis_gaps, f"ERROR: Cannot remove invisible gap. Gap #{gap_id} is not in {self.vis_gaps}"
         self.vis_gaps.remove(gap_id)

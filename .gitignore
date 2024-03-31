@@ -1,3 +1,4 @@
 environments/
 pyvisgraph/__pycache__/
 path.csv
+__pycache__/

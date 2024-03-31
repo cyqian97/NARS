@@ -35,7 +35,8 @@ COLLINEAR = 0
 COLIN_TOLERANCE = 10
 T = 10**COLIN_TOLERANCE
 T2 = 10.0**COLIN_TOLERANCE
-T_L = 10**(-COLIN_TOLERANCE)
+T_ccw = 10**(-12)
+T_on_segment = 0
 
 # TODO: change function name to bitangent_lines
 
@@ -556,22 +557,47 @@ def angle2(point_a, point_b, point_c):
 
 def ccw(A, B, C):
     """Return 1 if counter clockwise, -1 if clock wise, 0 if collinear"""
-    #  Rounding this way is faster than calling round()
-    area = int(((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x)) * T) / T2
-    if area > 0:
+    v_AB = [(B.x - A.x), (B.y - A.y)]
+    v_AC = [(C.x - A.x), (C.y - A.y)]
+    n_AB = sqrt(v_AB[0]**2 + v_AB[1]**2)
+    n_AC = sqrt(v_AC[0]**2 + v_AC[1]**2)
+    if n_AB == 0 or n_AC == 0:
+        return 0
+
+    area = float(v_AB[0] * v_AC[1] - v_AB[1] * v_AC[0])
+    collinear_coef = area / n_AB / n_AC
+
+    if collinear_coef > T_ccw:
         return CCW
-    if area < 0:
+    elif collinear_coef < -T_ccw:
         return CW
-    return 0
+    else:
+        return 0
+
+#     """Return 1 if counter clockwise, -1 if clock wise, 0 if collinear"""
+#     #  Rounding this way is faster than calling round()
+#     area = int(((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x)) * T) / T2
+#     if area > 0:
+#         return CCW
+#     if area < 0:
+#         return CW
+#     return 0
 
 
 def on_segment(p, q, r):
-    """Given three colinear points p, q, r, the function checks if point q
-    lies on line segment 'pr'."""
-    if (q.x <= max(p.x, r.x) + T_L) and (q.x >= min(p.x, r.x) - T_L):
-        if (q.y <= max(p.y, r.y)+T_L) and (q.y >= min(p.y, r.y)-T_L):
-            return True
-    return False
+    """Checks if point q lies on line segment 'pr'. 
+    Tight rules are applied to ensure that a gap event is only count once. 
+    However, for horizontal and vertical path edge, 
+    tight rule results in false negative, 
+    therefore these cases are treated separately."""
+    if not ccw(p, q, r) == 0:
+        return False
+    if p.x == r.x:
+        return ((q.y <= max(p.y, r.y)+T_on_segment) and (q.y >= min(p.y, r.y)-T_on_segment))
+    elif (p.y == r.y):
+        return ((q.x <= max(p.x, r.x) + T_on_segment) and (q.x >= min(p.x, r.x) - T_on_segment))
+    else:
+        return ((q.x <= max(p.x, r.x) + T_on_segment) and (q.x >= min(p.x, r.x) - T_on_segment)) and ((q.y <= max(p.y, r.y)+T_on_segment) and (q.y >= min(p.y, r.y)-T_on_segment))
 
 
 def edge_intersect(p1, q1, edge):

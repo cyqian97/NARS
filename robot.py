@@ -40,6 +40,7 @@ class Robot():
             gap.dir = (gap.vertex-self.pos).unit_vec()
 
     def move(self, path_edge):
+        print(f"move: {path_edge}")
         events = self.gap_events(path_edge)
         event_info = None
         for event in events:
@@ -137,6 +138,8 @@ class Robot():
             p = edge_cross_point(path_edge, edge)
             if p and p != path_edge.p2:  # path line contains the starting but not the ending point
                 _side = ccw(edge.p1, edge.p2, path_edge.p1)
+                if _side == 0:
+                    _side = - ccw(edge.p1, edge.p2, path_edge.p2)
                 if _side * edge.side == 1:
                     events.append(GapEvent(p, edge, GapEventType.M))
                 elif _side * edge.side == -1:
@@ -149,6 +152,8 @@ class Robot():
             p = edge_cross_point(path_edge, edge)
             if p and p != path_edge.p2:
                 _side = ccw(edge.p1, edge.p2, path_edge.p1)
+                if _side == 0:
+                    _side = - ccw(edge.p1, edge.p2, path_edge.p2)
                 if _side * edge.side == 1:
                     events.append(GapEvent(p, edge, GapEventType.A))
                 elif _side * edge.side == -1:
@@ -161,6 +166,8 @@ class Robot():
             p = edge_cross_point(path_edge, edge)
             if p and p != path_edge.p2:
                 _side = ccw(edge.p1, edge.p2, path_edge.p1)
+                if _side == 0:
+                    _side = - ccw(edge.p1, edge.p2, path_edge.p2)
                 if _side == -1:
                     events.append(GapEvent(p, edge, GapEventType.N))
                 elif _side == 1:
@@ -174,6 +181,4 @@ class Robot():
             print(event.etype.name, end=" ")
         print()
         return events
-
-
 

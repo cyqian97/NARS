@@ -105,10 +105,12 @@ class Graph(object):
 
     def __str__(self):
         res = ""
-        for point in self.graph:
+        points = list(self.graph.keys())
+        points.sort(key=lambda p: (p.x,p.y))
+        for point in points:
             res += "\n" + str(point) + ": "
             for edge in self.graph[point]:
-                res += str(edge)
+                res += str(edge) + ", "
         return res
 
     def __repr__(self):

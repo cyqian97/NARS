@@ -7,43 +7,53 @@ class algorithm_1():
     def __init__(self, gaps):
         self.vis_gaps = []
         self.gap_lists = {}
+        self.gap_id_map = {}
         for gap in gaps:
             self.add_new_gap(gap.id)
 
     def __call__(self, event_info):
+        if event_info.gap1_id in self.gap_id_map:
+            gap1_id = self.gap_id_map[event_info.gap1_id]
+        else:
+            gap1_id = event_info.gap1_id
+
+        if event_info.gap2_id in self.gap_id_map:
+            gap2_id = self.gap_id_map[event_info.gap2_id]
+        else:
+            gap2_id = event_info.gap2_id
+
         if event_info.etype == GapEventType.A:
-            self.add_new_gap(event_info.gap1_id, is_appear=True)
+            self.add_new_gap(gap1_id, is_appear=True)
 
         elif event_info.etype == GapEventType.D:
-            gap_list_1 = self.gap_lists[event_info.gap1_id]
+            gap_list_1 = self.gap_lists[gap1_id]
             if gap_list_1.star_pointer.next.gap_id is None:
                 gap_list_1.insert(END, PREV)
-            self.remove_invis_gap(event_info.gap1_id)
+            self.remove_invis_gap(gap1_id)
 
         elif event_info.etype == GapEventType.S:
-            gap_list_1 = self.gap_lists[event_info.gap1_id]
+            gap_list_1 = self.gap_lists[gap1_id]
             if gap_list_1.star_pointer.next.gap_id is None:
-                print("Insert split")
-                gap_list_1.insert(event_info.gap2_id, NEXT)
-                new_list = self.add_new_gap(event_info.gap2_id)
-                new_list.add_pointer(event_info.gap1_id)
+                gap_list_1.insert(gap2_id, NEXT)
+                new_list = self.add_new_gap(gap2_id)
+                new_list.add_pointer(gap1_id)
             else:
                 gap2_id = gap_list_1.star_pointer.next.gap_id
                 gap_list_2 = self.gap_lists[gap2_id]
                 gap_list_1.star_pointer.move_next()
-                gap_list_2.add_star_pointer(event_info.gap1_id)
+                gap_list_2.add_star_pointer(gap1_id)
                 self.vis_gaps.append(gap2_id)
-                #TODO: need to modify the gap sensor's gap id
+                self.gap_id_map[event_info.gap2_id] = gap2_id
 
         elif event_info.etype == GapEventType.M:
-            gap_list_1 = self.gap_lists[event_info.gap1_id]
+            gap_list_1 = self.gap_lists[gap1_id]
             if gap_list_1.star_pointer.prev.gap_id is None:
-                gap_list_1.insert(event_info.gap2_id, PREV)
-                gap_list_2 = self.gap_lists[event_info.gap2_id]
-                gap_list_2.add_pointer(event_info.gap1_id)
-                self.remove_invis_gap(event_info.gap2_id)
+                gap_list_1.insert(gap2_id, PREV)
+                gap_list_2 = self.gap_lists[gap2_id]
+                gap_list_2.add_pointer(gap1_id)
+                self.remove_invis_gap(gap2_id)
             else:
-                self.remove_invis_gap(gap_list_1.star_pointer.prev.gap_id)
+                self.remove_invis_gap(gap2_id)
                 gap_list_1.star_pointer.move_prev()
 
     def add_new_gap(self, gap_id, is_appear=False):
@@ -63,6 +73,7 @@ class algorithm_1():
 
     def __str__(self):
         s = ""
+        s += str(self.gap_id_map) + "\n"
         for key, val in self.gap_lists.items():
             s += (f"{key}: ")
             s += str(val)
@@ -105,12 +116,11 @@ class Pointer:
             self.next = Node()
         else:
             self.next = next
-        self.next.prev = self.prev
-        self.prev.next = self.next
+        self.connect()
         self.gap_id = gap_id
 
     def __str__(self):
-        if self.gap_id:
+        if self.gap_id is not None:
             return f" ({self.gap_id}) "
         else:
             return " (*) "
@@ -120,8 +130,7 @@ class Pointer:
         self.next = self.next.next
         if self.next is None:
             self.next = Node()
-            self.next.prev = self.prev
-            self.prev.next = self.next
+            self.connect()
         # print(f"move_next: next node: {self.next}")
 
     def move_prev(self):
@@ -129,12 +138,15 @@ class Pointer:
         self.prev = self.prev.prev
         if self.prev is None:
             self.prev = Node()
-            self.next.prev = self.prev
-            self.prev.next = self.next
+            self.connect()
         # print(f"move_prev: next node: {self.next}")
 
     def copy(self, gap_id=None):
         return Pointer(self.prev, self.next, gap_id)
+    
+    def connect(self):
+        self.next.prev = self.prev
+        self.prev.next = self.next
 
 
 class DoublyLinkedList:
@@ -162,8 +174,10 @@ class DoublyLinkedList:
             pointer.next.gap_id = gap_id
             pointer.prev = pointer.next
             pointer.next = Node()
+            pointer.connect()
             if self.head.gap_id is None:
                 self.head = pointer.prev
+            
             # print(f"insert: next node is none: {self.star_pointer.next is None}")
         else:
             pointer.prev.gap_id = gap_id

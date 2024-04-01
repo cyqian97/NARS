@@ -198,6 +198,7 @@ class DoublyLinkedList:
             pointer.prev.gap_id = gap_id
             pointer.next = pointer.prev
             pointer.prev = Node()
+            pointer.connect()
             self.head = pointer.next
         # self.nodes.append(node)
 

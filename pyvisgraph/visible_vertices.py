@@ -35,7 +35,7 @@ COLLINEAR = 0
 COLIN_TOLERANCE = 10
 T = 10**COLIN_TOLERANCE
 T2 = 10.0**COLIN_TOLERANCE
-T_ccw = 10 ** (-12)
+T_ccw = 10 ** (-11)
 T_on_segment = 0
 
 # TODO: change function name to bitangent_lines

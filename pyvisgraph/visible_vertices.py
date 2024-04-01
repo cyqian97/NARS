@@ -35,7 +35,7 @@ COLLINEAR = 0
 COLIN_TOLERANCE = 10
 T = 10**COLIN_TOLERANCE
 T2 = 10.0**COLIN_TOLERANCE
-T_ccw = 10**(-12)
+T_ccw = 10 ** (-12)
 T_on_segment = 0
 
 # TODO: change function name to bitangent_lines
@@ -205,7 +205,9 @@ def convex_chain(graph, conv_chain):
                 raise Exception(f"point {p} has no prev or next point")
             if ccw(p_p, p, p_n) == CCW:  # Add convex vertex to the current chain
                 chain_points.append(p)
-                if is_prev_conv:  # If the previos vertex is also convex, add the edge between them
+                if (
+                    is_prev_conv
+                ):  # If the previos vertex is also convex, add the edge between them
                     chain_edges.append(list(graph[p_p, p])[0])
                 is_prev_conv = True
             else:
@@ -220,8 +222,7 @@ def convex_chain(graph, conv_chain):
         if chain_points:
             # If vertices remain in the current chain after traverse the polygon,
             # it means the chain continues from end of the polygon to the beginning of the polygon
-            conv_chain.add_or_new_chain(
-                chain_id_init, chain_points, chain_edges)
+            conv_chain.add_or_new_chain(chain_id_init, chain_points, chain_edges)
             chain_points = []
             chain_edges = []
             chain_id += 1
@@ -263,7 +264,8 @@ def bitangent_complement(graph, visgraph, bitcomp):
                 edge1.side = ccw(p1_p_min, bit_line.p1, _next_point)
                 if edge1.side == COLLINEAR:
                     raise Exception(
-                        "ERROR: Bitangent complement is collinear with a boundary edge")
+                        "ERROR: Bitangent complement is collinear with a boundary edge"
+                    )
                 bitcomp.add_edge(edge1)
         else:
             raise Exception("bitangent complement for p1 not found")
@@ -275,7 +277,8 @@ def bitangent_complement(graph, visgraph, bitcomp):
                 edge2.side = ccw(p2_p_min, bit_line.p2, _next_point)
                 if edge2.side == COLLINEAR:
                     raise Exception(
-                        "ERROR: Bitangent complement is collinear with a boundary edge")
+                        "ERROR: Bitangent complement is collinear with a boundary edge"
+                    )
                 bitcomp.add_edge(edge2)
         else:
             raise Exception("bitangent complement for p2 not found")
@@ -430,12 +433,10 @@ def closest_point(p, graph, polygon_id, length=0.001):
     # Finds point closest to p, but on a edge of the polygon.
     # Solution from http://stackoverflow.com/a/6177788/4896361
     for i, e in enumerate(polygon_edges):
-        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + \
-            (p.y - e.p1.y) * (e.p2.y - e.p1.y)
+        num = (p.x - e.p1.x) * (e.p2.x - e.p1.x) + (p.y - e.p1.y) * (e.p2.y - e.p1.y)
         denom = (e.p2.x - e.p1.x) ** 2 + (e.p2.y - e.p1.y) ** 2
         u = num / denom
-        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x),
-                   e.p1.y + u * (e.p2.y - e.p1.y))
+        pu = Point(e.p1.x + u * (e.p2.x - e.p1.x), e.p1.y + u * (e.p2.y - e.p1.y))
         pc = pu
         if u < 0:
             pc = e.p1
@@ -559,8 +560,8 @@ def ccw(A, B, C):
     """Return 1 if counter clockwise, -1 if clock wise, 0 if collinear"""
     v_AB = [(B.x - A.x), (B.y - A.y)]
     v_AC = [(C.x - A.x), (C.y - A.y)]
-    n_AB = sqrt(v_AB[0]**2 + v_AB[1]**2)
-    n_AC = sqrt(v_AC[0]**2 + v_AC[1]**2)
+    n_AB = sqrt(v_AB[0] ** 2 + v_AB[1] ** 2)
+    n_AC = sqrt(v_AC[0] ** 2 + v_AC[1] ** 2)
     if n_AB == 0 or n_AC == 0:
         return 0
 
@@ -574,6 +575,7 @@ def ccw(A, B, C):
     else:
         return 0
 
+
 #     """Return 1 if counter clockwise, -1 if clock wise, 0 if collinear"""
 #     #  Rounding this way is faster than calling round()
 #     area = int(((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x)) * T) / T2
@@ -585,19 +587,29 @@ def ccw(A, B, C):
 
 
 def on_segment(p, q, r):
-    """Checks if point q lies on line segment 'pr'. 
-    Tight rules are applied to ensure that a gap event is only count once. 
-    However, for horizontal and vertical path edge, 
-    tight rule results in false negative, 
+    """Checks if point q lies on line segment 'pr'.
+    Tight rules are applied to ensure that a gap event is only count once.
+    However, for horizontal and vertical path edge,
+    tight rule results in false negative,
     therefore these cases are treated separately."""
     if not ccw(p, q, r) == 0:
         return False
     if p.x == r.x:
-        return ((q.y <= max(p.y, r.y)+T_on_segment) and (q.y >= min(p.y, r.y)-T_on_segment))
-    elif (p.y == r.y):
-        return ((q.x <= max(p.x, r.x) + T_on_segment) and (q.x >= min(p.x, r.x) - T_on_segment))
+        return (q.y <= max(p.y, r.y) + T_on_segment) and (
+            q.y >= min(p.y, r.y) - T_on_segment
+        )
+    elif p.y == r.y:
+        return (q.x <= max(p.x, r.x) + T_on_segment) and (
+            q.x >= min(p.x, r.x) - T_on_segment
+        )
     else:
-        return ((q.x <= max(p.x, r.x) + T_on_segment) and (q.x >= min(p.x, r.x) - T_on_segment)) and ((q.y <= max(p.y, r.y)+T_on_segment) and (q.y >= min(p.y, r.y)-T_on_segment))
+        return (
+            (q.x <= max(p.x, r.x) + T_on_segment)
+            and (q.x >= min(p.x, r.x) - T_on_segment)
+        ) and (
+            (q.y <= max(p.y, r.y) + T_on_segment)
+            and (q.y >= min(p.y, r.y) - T_on_segment)
+        )
 
 
 def edge_intersect(p1, q1, edge):

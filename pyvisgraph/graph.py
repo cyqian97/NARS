@@ -25,7 +25,7 @@ SOFTWARE.
 from collections import defaultdict
 import sys
 from pyvisgraph.classes import Point, Edge, Chain
-from pyvisgraph.visible_vertices import polygon_crossing,edge_cross_point
+from pyvisgraph.visible_vertices import polygon_crossing, edge_cross_point
 
 eps = 0.01
 
@@ -81,9 +81,9 @@ class Graph(object):
         for point in points:
             self.add_point(point)
 
-    def is_edge_intersect(self,edge):
+    def is_edge_intersect(self, edge):
         for _edge in self.edges:
-            if edge_cross_point(_edge,edge):
+            if edge_cross_point(_edge, edge):
                 return True
         return False
 
@@ -106,7 +106,7 @@ class Graph(object):
     def __str__(self):
         res = ""
         points = list(self.graph.keys())
-        points.sort(key=lambda p: (p.x,p.y))
+        points.sort(key=lambda p: (p.x, p.y))
         for point in points:
             res += "\n" + str(point) + ": "
             for edge in self.graph[point]:
@@ -129,11 +129,11 @@ class PolygonGraph(Graph):
     will be classified as a polygon. Non-polygons like just one Point will be
     given a polygon ID of -1 and not maintained in the dict.
 
-    Wall and obstacles: the wall is the polygon with pid=0. All other polygons 
-    are obstacles and should be within the wall. The exterior of the wall and 
+    Wall and obstacles: the wall is the polygon with pid=0. All other polygons
+    are obstacles and should be within the wall. The exterior of the wall and
     the interiors of all obstacles are infeasible for the robot.
 
-    Edge direction: follow the direction of an edge, the infeasible area should 
+    Edge direction: follow the direction of an edge, the infeasible area should
     be on the righthand side.
     """
 
@@ -152,7 +152,9 @@ class PolygonGraph(Graph):
                     # Currently, the single point is not added to polygon_vertices
                     self.add_point(point)
             elif len(polygon) == 2:
-                raise Exception("len(polygon) should not be 2, edge obstacle are currently not allowed.")
+                raise Exception(
+                    "len(polygon) should not be 2, edge obstacle are currently not allowed."
+                )
             else:
                 # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
                 current_edges = []
@@ -203,16 +205,18 @@ class ChainGraph(Graph):
         self.chains = defaultdict(Chain)
 
     def new_chain(self, chain_id, vertices, edges):
-        assert not chain_id in self.chains, f"new_chain: Chain id {
-            chain_id} already in chains"
+        assert (
+            not chain_id in self.chains
+        ), f"new_chain: Chain id {chain_id} already in chains"
         self.chains[chain_id] = Chain(chain_id, set(vertices), set(edges))
         self.add_points(vertices)
         self.add_edges(edges)
         self.start_and_end(chain_id)
 
     def add_to_chain(self, chain_id, vertices, edges):
-        assert chain_id in self.chains, f"add_to_chain: Chain id {
-            chain_id} not in chains"
+        assert (
+            chain_id in self.chains
+        ), f"add_to_chain: Chain id {chain_id} not in chains"
         self.chains[chain_id].add_edges(edges)
         self.chains[chain_id].add_points(vertices)
         self.add_edges(edges)
@@ -225,18 +229,23 @@ class ChainGraph(Graph):
             self.new_chain(chain_id, vertices, edges)
 
     def start_and_end(self, chain_id):
-        assert chain_id in self.chains, f"add_to_chain: Chain id {
-            chain_id} not in chains"
+        assert (
+            chain_id in self.chains
+        ), f"add_to_chain: Chain id {chain_id} not in chains"
         self.chains[chain_id].start = None
         self.chains[chain_id].end = None
 
         vertices = self.chains[chain_id].vertices
-        if len(vertices)==1:
+        if len(vertices) == 1:
             self.chains[chain_id].start = list(vertices)[0]
             self.chains[chain_id].end = list(vertices)[0]
 
         for p in vertices:
-            if self.get_next_point(p) in vertices and (not self.get_prev_point(p) in vertices):
+            if self.get_next_point(p) in vertices and (
+                not self.get_prev_point(p) in vertices
+            ):
                 self.chains[chain_id].start = p
-            if (not self.get_next_point(p) in vertices) and self.get_prev_point(p) in vertices:
+            if (not self.get_next_point(p) in vertices) and self.get_prev_point(
+                p
+            ) in vertices:
                 self.chains[chain_id].end = p

@@ -50,8 +50,7 @@ blue = (17, 0, 187)
 yellow = (200, 200, 0)
 purple = (154, 128, 185)
 brown = (146, 114, 84)
-c_matlab = ("#0072BD", "#D95319", "#EDB120",
-            "#7E2F8E", "#77AC30", "#4DBEEE", "#A2142F")
+c_matlab = ("#0072BD", "#D95319", "#EDB120", "#7E2F8E", "#77AC30", "#4DBEEE", "#A2142F")
 
 LEFT = 1
 RIGHT = 3
@@ -67,24 +66,20 @@ def draw_polygon(polygon, color, size, complete=True):
     if complete:
         if len(polygon) > 1:
             polygon.append(polygon[0])
-            pygame.draw.polygon(gameDisplay, color, [
-                                point() for point in polygon])
+            pygame.draw.polygon(gameDisplay, color, [point() for point in polygon])
         else:
-            draw_star(gameDisplay, purple,
-                      (polygon[0].x, polygon[0].y), size*3)
+            draw_star(gameDisplay, purple, (polygon[0].x, polygon[0].y), size * 3)
     else:
         p1 = polygon[0]
         for p2 in polygon[1:]:
-            pygame.draw.line(gameDisplay, color,
-                             (p1.x, p1.y), (p2.x, p2.y), size)
+            pygame.draw.line(gameDisplay, color, (p1.x, p1.y), (p2.x, p2.y), size)
             p1 = p2
 
 
 def draw_edges(edges, color, size):
     for edge in edges:
         pygame.draw.line(
-            gameDisplay, color, (edge.p1.x,
-                                 edge.p1.y), (edge.p2.x, edge.p2.y), size
+            gameDisplay, color, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
         )
 
 
@@ -92,13 +87,19 @@ def draw_edges_side(edges, color1, color2, size):
     for edge in edges:
         if edge.side == 1:
             pygame.draw.line(
-                gameDisplay, color1, (edge.p1.x,
-                                      edge.p1.y), (edge.p2.x, edge.p2.y), size
+                gameDisplay,
+                color1,
+                (edge.p1.x, edge.p1.y),
+                (edge.p2.x, edge.p2.y),
+                size,
             )
         elif edge.side == -1:
             pygame.draw.line(
-                gameDisplay, color2, (edge.p1.x,
-                                      edge.p1.y), (edge.p2.x, edge.p2.y), size
+                gameDisplay,
+                color2,
+                (edge.p1.x, edge.p1.y),
+                (edge.p2.x, edge.p2.y),
+                size,
             )
         else:
             raise Exception(f"Edge side should be -1 or 1, not {edge.side}")
@@ -132,8 +133,7 @@ def draw_star(screen, color, point, size):
 
 def draw_visible_mouse_vertices(pos, points, color, size):
     for point in points:
-        pygame.draw.line(gameDisplay, color, (pos.x, pos.y),
-                         (point.x, point.y), size)
+        pygame.draw.line(gameDisplay, color, (pos.x, pos.y), (point.x, point.y), size)
 
 
 def draw_gap_sensor(robot):
@@ -144,24 +144,18 @@ def draw_gap_sensor(robot):
     if robot:
         for gap in robot.gaps:
             dir = gap.dir
-            start = center + radius*dir
-            end = center + (radius+6)*dir
-            text_center = center + (radius+16)*dir - array([5, 5])
+            start = center + radius * dir
+            end = center + (radius + 6) * dir
+            text_center = center + (radius + 16) * dir - array([5, 5])
             if gap.side == vg.CCW:
-                pygame.draw.line(gameDisplay, red, start,
-                                 end, 3)
-                draw_text(str(gap.id), red,
-                          25, text_center[0], text_center[1])
+                pygame.draw.line(gameDisplay, red, start, end, 3)
+                draw_text(str(gap.id), red, 25, text_center[0], text_center[1])
             elif gap.side == vg.CW:
-                pygame.draw.line(gameDisplay, blue, start,
-                                 end, 3)
-                draw_text(str(gap.id), blue,
-                          25, text_center[0], text_center[1])
+                pygame.draw.line(gameDisplay, blue, start, end, 3)
+                draw_text(str(gap.id), blue, 25, text_center[0], text_center[1])
             else:
-                pygame.draw.line(gameDisplay, black, start,
-                                 end, 3)
-                draw_text(str(gap.id), black,
-                          25, text_center[0], text_center[1])
+                pygame.draw.line(gameDisplay, black, start, end, 3)
+                draw_text(str(gap.id), black, 25, text_center[0], text_center[1])
 
 
 def draw_text(mode_txt, color, size, x, y):
@@ -174,7 +168,9 @@ def quit_event(event):
     if event.type == pygame.QUIT:
         pygame.quit()
         quit()
-    elif event.type == pygame.KEYUP and (event.key == pygame.K_q or event.key == pygame.K_ESCAPE):
+    elif event.type == pygame.KEYUP and (
+        event.key == pygame.K_q or event.key == pygame.K_ESCAPE
+    ):
         pygame.quit()
         quit()
 
@@ -200,8 +196,7 @@ def help_screen():
                     helping = False
 
         pygame.draw.rect(gameDisplay, black, (startx, starty, rectw, recth))
-        pygame.draw.rect(gameDisplay, white,
-                         (startxi, startyi, rectwi, recthi))
+        pygame.draw.rect(gameDisplay, white, (startxi, startyi, rectwi, recthi))
 
         draw_text(
             "-- VISIBILITY GRAPH SIMULATOR --", black, 30, startxi + 90, startyi + 10
@@ -214,8 +209,7 @@ def help_screen():
             startxi + 10,
             startyi + 80,
         )
-        draw_text("D - TOGGLE DRAW MODE", black,
-                  25, startxi + 10, startyi + 115)
+        draw_text("D - TOGGLE DRAW MODE", black, 25, startxi + 10, startyi + 115)
         draw_text(
             "    Draw polygons by left clicking to set a point of the",
             black,
@@ -237,8 +231,7 @@ def help_screen():
             startxi + 10,
             startyi + 215,
         )
-        draw_text("    C - CLEAR THE SCREEN", black,
-                  25, startxi + 10, startyi + 250)
+        draw_text("    C - CLEAR THE SCREEN", black, 25, startxi + 10, startyi + 250)
         draw_text("S - SAVE MAP", black, 25, startxi + 10, startyi + 285)
         draw_text("L - LOAD MAP", black, 25, startxi + 10, startyi + 320)
         # draw_text("S - TOGGLE SHORTEST PATH MODE", black, 25, startxi+10, startyi+285)
@@ -289,7 +282,9 @@ class Simulator:
 
     def close_polygon(self):
         if len(self.work_polygon) >= 1:
-            if not self.is_edge_intersect(vg.Edge(self.work_polygon[-1], self.work_polygon[0]), close_edge=True):
+            if not self.is_edge_intersect(
+                vg.Edge(self.work_polygon[-1], self.work_polygon[0]), close_edge=True
+            ):
                 self.polygons.append(self.work_polygon)
                 self.work_polygon = []
                 self.build()
@@ -321,12 +316,12 @@ class Simulator:
         for polygon in self.polygons:
             _l = len(polygon)
             for i, _point in enumerate(polygon):
-                _edge = vg.Edge(_point, polygon[(i+1) % _l])
+                _edge = vg.Edge(_point, polygon[(i + 1) % _l])
                 if vg.edge_cross_point(edge, _edge):
                     return True
         if len(self.work_polygon) > 2:
-            for i in range(len(self.work_polygon)-2):
-                _edge = vg.Edge(self.work_polygon[i], self.work_polygon[i+1])
+            for i in range(len(self.work_polygon) - 2):
+                _edge = vg.Edge(self.work_polygon[i], self.work_polygon[i + 1])
                 _crose = vg.edge_cross_point(edge, _edge)
                 if not close_edge:
                     if _crose:
@@ -343,9 +338,9 @@ class Simulator:
             # Format the time as a string suitable for a file name
             file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         # Check if 'environments' is a folder under the current directory
-        if not os.path.isdir('environments'):
+        if not os.path.isdir("environments"):
             # Create 'environments' if it doesn't exist
-            os.makedirs('environments')
+            os.makedirs("environments")
         self.vis_graph.save(
             os.path.join("environments", file_name)
         )  # Check if the input is empty
@@ -362,8 +357,7 @@ class Simulator:
         files = glob.glob(os.path.join(directory, "*"))
 
         # Filter files that match the pattern
-        filtered_files = [f for f in files if re.search(
-            pattern, os.path.basename(f))]
+        filtered_files = [f for f in files if re.search(pattern, os.path.basename(f))]
 
         # Find the most recently created file among the filtered files
         if filtered_files:
@@ -377,9 +371,9 @@ class Simulator:
 
 
 def read_path():
-    with open('path.csv', 'r') as file:
+    with open("path.csv", "r") as file:
         for line in file:
-            parts = line.strip().split(',')
+            parts = line.strip().split(",")
             yield vg.Point(int(parts[0]), int(parts[1]))
 
 
@@ -430,7 +424,8 @@ def game_loop():
                         _is_edge_intersect = False
                         if len(sim.work_polygon) > 0:
                             _is_edge_intersect = sim.is_edge_intersect(
-                                vg.Edge(_point, sim.work_polygon[-1]))
+                                vg.Edge(_point, sim.work_polygon[-1])
+                            )
                         print(f"_is_edge_intersect = {_is_edge_intersect}")
                         if not _is_edge_intersect:
                             if len(sim.polygons):
@@ -455,35 +450,42 @@ def game_loop():
                         if len(sim.path) > 0:
                             if not sim.is_edge_intersect(vg.Edge(sim.path[-1], _p)):
                                 sim.path.append(_p)
-                                with open('path.csv', 'a') as file:
-                                    file.write(f'{pos[0]},{pos[1]}\n')
-                                sim.robot.move(
-                                    vg.Edge(sim.path[-2], sim.path[-1]))
+                                with open("path.csv", "a") as file:
+                                    file.write(f"{pos[0]},{pos[1]}\n")
+                                sim.robot.move(vg.Edge(sim.path[-2], sim.path[-1]))
                             else:
                                 print("ERROR: Edge cross!")
                         else:
                             sim.path.append(_p)
-                            with open('path.csv', 'w') as file:
-                                file.write(f'{pos[0]},{pos[1]}\n')
+                            with open("path.csv", "w") as file:
+                                file.write(f"{pos[0]},{pos[1]}\n")
                             sim.robot = Robot(sim.vis_graph, _p)
                 elif event.type == pygame.KEYUP and event.key == pygame.K_l:
                     is_reading_path = True
                     print("Press Enter to continue...")
-                    
-                elif is_reading_path and event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+
+                elif (
+                    is_reading_path
+                    and event.type == pygame.KEYDOWN
+                    and event.key == pygame.K_RETURN
+                ):
                     keep_reading_path = True
-                    
-                elif is_reading_path and event.type == pygame.KEYUP and event.key == pygame.K_RETURN:
+
+                elif (
+                    is_reading_path
+                    and event.type == pygame.KEYUP
+                    and event.key == pygame.K_RETURN
+                ):
                     keep_reading_path = False
-                    
 
             if sim.show_mouse_visgraph and sim.built:
                 if event.type == pygame.MOUSEMOTION:
                     if sim.vis_graph.point_valid(vg.Point(pos[0], pos[1])):
                         sim.mouse_point = vg.Point(pos[0], pos[1])
                         sim.mouse_vertices = sim.vis_graph.find_bitangent(
-                            sim.mouse_point)
-        
+                            sim.mouse_point
+                        )
+
         if keep_reading_path and is_display_update:
             if path_reader is None:
                 path_reader = read_path()
@@ -537,10 +539,10 @@ def game_loop():
                     draw_polygon(polygon, gray, 3)
 
         if sim.built and sim.show_static_visgraph:
-            draw_edges_side(sim.vis_graph.bitcomp.get_edges(),
-                            c_matlab[0], c_matlab[1], 2)
-            draw_edges_side(sim.vis_graph.extlines.get_edges(),
-                            lightblue, lightred, 1)
+            draw_edges_side(
+                sim.vis_graph.bitcomp.get_edges(), c_matlab[0], c_matlab[1], 2
+            )
+            draw_edges_side(sim.vis_graph.extlines.get_edges(), lightblue, lightred, 1)
             draw_edges(sim.vis_graph.visgraph.get_edges(), lightgreen, 1)
             draw_vertices(sim.vis_graph.conv_chains.get_points(), green, 3)
             draw_edges(sim.vis_graph.conv_chains.get_edges(), green, 2)
@@ -551,12 +553,12 @@ def game_loop():
                 p = value.end
                 if p:
                     pygame.draw.circle(gameDisplay, red, (p.x, p.y), 6)
-            draw_edges_side(sim.vis_graph.inflx.get_edges(),
-                            c_matlab[2], c_matlab[3], 2)
+            draw_edges_side(
+                sim.vis_graph.inflx.get_edges(), c_matlab[2], c_matlab[3], 2
+            )
 
         if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
-            draw_visible_mouse_vertices(
-                sim.mouse_point, sim.mouse_vertices, gray, 1)
+            draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)
 
         draw_gap_sensor(sim.robot)
         if len(sim.path) > 1:

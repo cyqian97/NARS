@@ -46,13 +46,14 @@ orange_button = Button(ORANGE, 350, 50, BUTTON_WIDTH, BUTTON_HEIGHT, 'Orange')
 
 # Variables to track state
 current_color = None
+red_disk_centers = []
+blue_disk_centers = []
 orange_path_points = []
 
 # Main loop
 running = True
-screen.fill(WHITE)
 while running:
-    
+    screen.fill(WHITE)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -68,24 +69,40 @@ while running:
                 orange_path_points = []
             else:
                 if current_color == RED:
-                    pygame.draw.circle(screen, RED, mouse_pos, 20)
+                    red_disk_centers.append(mouse_pos)
                     print("draw red!!!")
                 elif current_color == BLUE:
-                    pygame.draw.circle(screen, BLUE, mouse_pos, 20)
+                    blue_disk_centers.append(mouse_pos)
                 elif current_color == ORANGE:
                     orange_path_points.append(mouse_pos)
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
-            elif event.key == pygame.K_u and current_color == ORANGE:
-                if orange_path_points:
+            elif event.key == pygame.K_u:
+                if current_color == ORANGE and orange_path_points:
                     orange_path_points.pop()
+                elif current_color == RED and red_disk_centers:
+                    red_disk_centers.pop()
+                elif current_color == BLUE and blue_disk_centers:
+                    blue_disk_centers.pop()
+            elif event.key == pygame.K_c:
+                if current_color == ORANGE:
+                    orange_path_points = []
+                elif current_color == RED:
+                    red_disk_centers = []
+                elif current_color == BLUE:
+                    blue_disk_centers = []
 
     # Draw buttons
     red_button.draw(screen, BLACK)
     blue_button.draw(screen, BLACK)
     orange_button.draw(screen, BLACK)
     
+    for c in red_disk_centers:
+        pygame.draw.circle(screen, RED, c, 20)
+    for c in blue_disk_centers:
+        pygame.draw.circle(screen, BLUE, c, 20)
+
     # Draw orange path if points exist
     if len(orange_path_points)>1:
         pygame.draw.lines(screen, ORANGE, False, orange_path_points, 5)

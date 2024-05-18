@@ -115,6 +115,10 @@ class VisGraph(object):
             _inflx_lines(self.graph,self.conv_chains,self.inflx)
             _ext_lines(self.graph,self.conv_chains,self.extlines)
 
+            for key, value in self.conv_chains.chains.items():
+                p = chain.start
+
+
         else:
             pool = Pool(workers)
             batches = [

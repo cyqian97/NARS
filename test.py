@@ -77,6 +77,9 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
+            elif event.key == pygame.K_u and current_color == ORANGE:
+                if orange_path_points:
+                    orange_path_points.pop()
 
     # Draw buttons
     red_button.draw(screen, BLACK)

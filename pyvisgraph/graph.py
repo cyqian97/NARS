@@ -142,19 +142,21 @@ class PolygonGraph(Graph):
         self.edges = set()
         self.polygon_edges = defaultdict(set)
         self.polygon_vertices = defaultdict(list)
+        self.polygons = []
         pid = 0
         for polygon in polygons:
             while polygon[0] == polygon[-1] and len(polygon) > 1:
                 polygon.pop()
-            if len(polygon) == 1:
+            if len(polygon) == 2:
+                print(
+                    "len(polygon) should not be 2, edge obstacle are currently not allowed."
+                )
+                continue
+            elif len(polygon) == 1:
                 for point in polygon:
                     point.polygon_id = pid
                     # Currently, the single point is not added to polygon_vertices
                     self.add_point(point)
-            elif len(polygon) == 2:
-                raise Exception(
-                    "len(polygon) should not be 2, edge obstacle are currently not allowed."
-                )
             else:
                 # But modifying an object that affects its hash or equality while it's in a set can lead to undefined behavior.
                 current_edges = []
@@ -194,7 +196,7 @@ class PolygonGraph(Graph):
                 if pid == 0:
                     for edge in current_edges:
                         edge.flip()
-
+            self.polygons.append(polygon)
             pid += 1
 
 

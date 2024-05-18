@@ -213,18 +213,19 @@ def help_screen():
             startyi + 215,
         )
         draw_text("    C - CLEAR THE SCREEN", black, 25, startxi + 10, startyi + 250)
-        draw_text("S - SAVE MAP", black, 25, startxi + 10, startyi + 285)
-        draw_text("L - LOAD MAP", black, 25, startxi + 10, startyi + 320)
-        # draw_text("S - TOGGLE SHORTEST PATH MODE", black, 25, startxi+10, startyi+285)
-        # draw_text("    Left click to set start point, right click to set end point.", black, 25, startxi+10, startyi+320)
-        # draw_text("    Hold left/right mouse button down to drag start/end point.", black, 25, startxi+10, startyi+355)
         draw_text(
             "P - TOGGLE PATH MODE",
             black,
             25,
             startxi + 10,
-            startyi + 390,
+            startyi + 285,
         )
+        draw_text("    L - LOAD PATH", black, 25, startxi + 10, startyi + 320)
+        draw_text("S - SAVE MAP", black, 25, startxi + 10, startyi + 355)
+        draw_text("L - LOAD MAP", black, 25, startxi + 10, startyi + 390)
+        # draw_text("S - TOGGLE SHORTEST PATH MODE", black, 25, startxi+10, startyi+285)
+        # draw_text("    Left click to set start point, right click to set end point.", black, 25, startxi+10, startyi+320)
+        # draw_text("    Hold left/right mouse button down to drag start/end point.", black, 25, startxi+10, startyi+355)
         # draw_text("G - TOGGLE POLYGON VISIBILITY GRAPH", black, 25, startxi+10, startyi+425)
         # draw_text("© Christian August Reksten-Monsen", black, 20, startxi+140, startyi+470)
 
@@ -276,6 +277,7 @@ class Simulator:
                 self.polygons.append(self.work_polygon)
                 self.work_polygon = []
                 self.build()
+                self.polygons = self.vis_graph.graph.polygons
             else:
                 print("ERROR: Edge cross!")
 
@@ -424,38 +426,30 @@ def game_loop():
                 cursor_pos = pos
 
             if sim.mode_path and sim.built:
-                if (not is_reading_path) and event.type == pygame.MOUSEBUTTONUP:
-                    _p = vg.Point(pos[0], pos[1])
-                    if event.button == LEFT and sim.vis_graph.point_valid(_p):
-                        if len(sim.path) > 0:
-                            if not sim.is_edge_intersect(vg.Edge(sim.path[-1], _p)):
-                                sim.path.append(_p)
-                                with open("path.csv", "a") as file:
-                                    file.write(f"{pos[0]},{pos[1]}\n")
-                                sim.robot.move(vg.Edge(sim.path[-2], sim.path[-1]))
+                if not is_reading_path:
+                    if event.type == pygame.MOUSEBUTTONUP:
+                        _p = vg.Point(pos[0], pos[1])
+                        if event.button == LEFT and sim.vis_graph.point_valid(_p):
+                            if len(sim.path) > 0:
+                                if not sim.is_edge_intersect(vg.Edge(sim.path[-1], _p)):
+                                    sim.path.append(_p)
+                                    with open("path.csv", "a") as file:
+                                        file.write(f"{pos[0]},{pos[1]}\n")
+                                    sim.robot.move(vg.Edge(sim.path[-2], sim.path[-1]))
+                                else:
+                                    print("ERROR: Edge cross!")
                             else:
-                                print("ERROR: Edge cross!")
-                        else:
-                            sim.path.append(_p)
-                            with open("path.csv", "w") as file:
-                                file.write(f"{pos[0]},{pos[1]}\n")
-                            sim.robot = Robot(sim.vis_graph, _p)
-                elif event.type == pygame.KEYUP and event.key == pygame.K_l:
-                    is_reading_path = True
-                    print("Press Enter to continue...")
-
-                elif (
-                    is_reading_path
-                    and event.type == pygame.KEYDOWN
-                    and event.key == pygame.K_RETURN
-                ):
+                                sim.path.append(_p)
+                                with open("path.csv", "w") as file:
+                                    file.write(f"{pos[0]},{pos[1]}\n")
+                                sim.robot = Robot(sim.vis_graph, _p)
+                    elif event.type == pygame.KEYUP:
+                        if event.key == pygame.K_l:
+                            is_reading_path = True
+                            print("Press Enter to continue...")
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     keep_reading_path = True
-
-                elif (
-                    is_reading_path
-                    and event.type == pygame.KEYUP
-                    and event.key == pygame.K_RETURN
-                ):
+                elif event.type == pygame.KEYUP and event.key == pygame.K_RETURN:
                     keep_reading_path = False
 
             if sim.show_mouse_visgraph and sim.built:
@@ -537,9 +531,15 @@ def game_loop():
                 sim.vis_graph.inflx.get_edges(), c_matlab[2], c_matlab[3], 2
             )
 
-        if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:            
+        if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
             for point in sim.mouse_vertices:
-                pygame.draw.line(gameDisplay, gray, (sim.mouse_point.x, sim.mouse_point.y), (point.x, point.y), 1)
+                pygame.draw.line(
+                    gameDisplay,
+                    gray,
+                    (sim.mouse_point.x, sim.mouse_point.y),
+                    (point.x, point.y),
+                    1,
+                )
 
         draw_gap_sensor(sim.robot)
         if len(sim.path) > 1:

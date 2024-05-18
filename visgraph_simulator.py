@@ -261,6 +261,13 @@ class Simulator:
         self._clear_path()
         self.mode_path = False
 
+    def toggle_path_mode(self):
+        if self.mode_path:
+            self._clear_path()
+        self.mode_path = not self.mode_path
+        self.mode_draw = False
+        self.show_mouse_visgraph = self.mode_path
+
     def close_polygon(self):
         if len(self.work_polygon) >= 1:
             if not self.is_edge_intersect(
@@ -278,12 +285,6 @@ class Simulator:
         elif len(self.polygons) > 0:
             self.polygons.pop()
             self.build()
-
-    def toggle_path_mode(self):
-        if self.mode_path:
-            self._clear_path()
-        self.mode_path = not self.mode_path
-        self.mode_draw = False
 
     def clear_all(self):
         self.__init__()
@@ -381,8 +382,7 @@ def game_loop():
                 # elif event.key == pygame.K_g:
                 #     sim.show_static_visgraph = not sim.show_static_visgraph
                 elif event.key == pygame.K_p:
-                    sim.toggle_draw_mode()
-                    sim.show_mouse_visgraph = not sim.show_mouse_visgraph
+                    sim.mode_draw = False
                     sim.toggle_path_mode()
 
                 elif event.key == pygame.K_d:

@@ -95,13 +95,28 @@ class Graph(object):
         return False
 
     def __getitem__(self, p):
+        """ Use [] after a graph variable to get edges
+
+        Args:
+            p (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         if isinstance(p, Point):
             if p in self.graph:
                 return self.graph[p]
-        else:
+            else:
+                return set()
+        elif len(p)==2 and isinstance(p[0], Point) and isinstance(p[1], Point):
             if p[0] in self.graph and p[1] in self.graph:
                 return self.graph[p[0]].intersection(self.graph[p[1]])
-        return set()
+            else:
+                print("__getitem__: point not in graph!")
+                return set()
+        else:
+            print("__getitem__: ERROR: Wrong input type!")
+            return set()
 
     def __str__(self):
         res = ""

@@ -153,8 +153,8 @@ def bitangent_lines(point, graph, scan="full"):
                     "len(_edges) should be 0 or 2, but is {}".format(len(_edges))
                 )
 
-        # Bitangent line between two point objects are ignored
-        # but between cursor and point object is added
+        # Bitangent line between two point objects are ignored but between cursor and point object is added
+        # This is check by the scan mode, when handling cursor we will use the 'full' mode
         if scan == "half" and point_count > 1:
             is_visible = False
 

@@ -31,26 +31,12 @@ import glob
 import os
 import re
 import math
+from utils import *
 
 pygame.init()
 
 display_width = 1600
 display_height = 900
-
-black = (0, 0, 0)
-white = (255, 255, 255)
-red = (237, 41, 57)
-darkred = (120, 0, 0)
-lightred = (255, 220, 220)
-lightgreen = (220, 255, 220)
-lightblue = (210, 230, 255)
-gray = (169, 169, 169)
-green = (0, 128, 0)
-blue = (17, 0, 187)
-yellow = (200, 200, 0)
-purple = (154, 128, 185)
-brown = (146, 114, 84)
-c_matlab = ("#0072BD", "#D95319", "#EDB120", "#7E2F8E", "#77AC30", "#4DBEEE", "#A2142F")
 
 LEFT = 1
 RIGHT = 3
@@ -129,11 +115,6 @@ def draw_star(screen, color, point, size):
         point_y = y + math.sin(angle) * radius
         points.append((point_x, point_y))
     pygame.draw.polygon(screen, color, points)
-
-
-def draw_visible_mouse_vertices(pos, points, color, size):
-    for point in points:
-        pygame.draw.line(gameDisplay, color, (pos.x, pos.y), (point.x, point.y), size)
 
 
 def draw_gap_sensor(robot):
@@ -426,7 +407,6 @@ def game_loop():
                             _is_edge_intersect = sim.is_edge_intersect(
                                 vg.Edge(_point, sim.work_polygon[-1])
                             )
-                        print(f"_is_edge_intersect = {_is_edge_intersect}")
                         if not _is_edge_intersect:
                             if len(sim.polygons):
                                 if sim.vis_graph.point_valid(_point):
@@ -557,8 +537,9 @@ def game_loop():
                 sim.vis_graph.inflx.get_edges(), c_matlab[2], c_matlab[3], 2
             )
 
-        if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:
-            draw_visible_mouse_vertices(sim.mouse_point, sim.mouse_vertices, gray, 1)
+        if sim.built and sim.show_mouse_visgraph and len(sim.mouse_vertices) > 0:            
+            for point in sim.mouse_vertices:
+                pygame.draw.line(gameDisplay, gray, (sim.mouse_point.x, sim.mouse_point.y), (point.x, point.y), 1)
 
         draw_gap_sensor(sim.robot)
         if len(sim.path) > 1:

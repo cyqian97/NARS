@@ -137,4 +137,6 @@ class Chain():
         self.edges.update(edges)
 
     def add_points(self,vertices):
+        for v in vertices:
+            v.chain_id = self.chain_id
         self.vertices.update(vertices)

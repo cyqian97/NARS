@@ -35,8 +35,8 @@ from utils import *
 
 pygame.init()
 
-display_width = 1600
-display_height = 900
+display_width = 1500
+display_height = 800
 
 LEFT = 1
 RIGHT = 3

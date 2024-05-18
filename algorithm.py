@@ -27,7 +27,7 @@ class algorithm_1:
         elif event_info.etype == GapEventType.D:
             gap_list_1 = self.gap_lists[gap1_id]
             if gap_list_1.star_pointer.next.gap_id is None:
-                gap_list_1.insert(END, PREV)
+                gap_list_1.insert(END, NEXT)
             self.remove_invis_gap(gap1_id)
 
         elif event_info.etype == GapEventType.S:

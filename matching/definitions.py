@@ -1,109 +1,89 @@
-NODE_NUM = 0 # the total number of nodes
-
-class Node():
-    __slots__ = ("id", "num_p", "num_n")
-
-    def __init__(self, id, num_p, num_n):
-        """Node class fror matching problem
-
-        Args:
-            id (int): node id, start from 1
-            num_p (int): number of positive connectors
-            num_n (int): number of negative connectors
+class MatchingGraph():
+    def __init__(self):
+        """Matching graph data structure
         """
-        self.id = id
-        self.num_p = num_p
-        self.num_n = num_n
-        NODE_NUM+=1
+        self.node_num = 0
+        self.num_p = {}  # The remaining positive connector numbers of nodes
+        self.num_n = {}  # The remaining negative connector numbers of nodes
+        # Current edges. {(id1,side1):[(id2,side2),(id2,side3)]}. Must also include {(id2,side2):(id1,side1)}
+        self.edges = defaultdict(set)
 
-    def __getitem__(self, side):
+    def __keys_asserts__(self, keys):
+        assert isinstance(keys, tuple) and len(keys) == 2
+        id, side = keys
+        assert isinstance(id, int) and 0 <= id < self.node_num
+        assert side == 1 or side == - \
+            1, f"__getitem__: ERROR: side must be +1 or -1, but is {side}"
+        return id, side
+
+    def __getitem__(self, keys):
+        id, side = self.__keys_asserts__(keys)
         if side == 1:
-            return self.num_p
-        elif side == -1:
-            return self.num_n
+            return self.num_p[id]
         else:
-            raise Exception(
-                f"__getitem__: ERROR: side must be +1 or -1, but is {side}")
+            return self.num_n[id]
 
-    def connected(side):
+    def __setitem__(self, keys, value):
+        id, side = self.__keys_asserts__(keys)
         if side == 1:
-            if self.num_p > 0:
-                self.num_p -= 1
-            else:
-                raise Exception(
-                    f"connected: ERROR: no more positive connectors")
-        elif side == -1:
-            if self.num_n > 0:
-                self.num_n -= 1
-            else:
-                raise Exception(
-                    f"connected: ERROR: no more negative connectors")
+            self.num_p[id] = value
         else:
-            raise Exception(
-                f"__getitem__: ERROR: side must be +1 or -1, but is {side}")
+            self.num_n[id] = value
 
+    def add_node(self, id, n_p, n_n):
+        assert id not in self.num_p and id not in self.num_n
+        self.node_num += 1
+        self.num_p[id] = n_p
+        self.num_n[id] = n_n
+        return
 
-class Edge():
-    def __init__(n1, side1, n2, side2):
-        self.n1 = n1
-        self.n2 = n2
-        self.side1 = side1
-        self.side2 = side2
-
-    def __eq__(self, edge):
-        if self.n1 == edge.n1 and self.n2 == edge.n2 and self.side1 == edge.side1 and self.side2 == edge.side2:
-            return True
-        elif self.n1 == edge.n2 and self.n2 == edge.n1 and self.side1 == edge.side2 and self.side2 == edge.side1:
+    def connect(self, id1, side1, id2, side2):
+        if self.can_connect(id1, side1, id2, side2):
+            self[id1, side1] -= 1
+            self[id2, side2] -= 1
+            self.edges[id1, side1].update([(id2, side2)])
+            self.edges[id2, side2].update([(id1, side1)])
             return True
         else:
             return False
 
-    def __hash__(self):
-        return hash((self.n1, self.side1)) ^ hash((self.n2, self.side2))
+    def can_connect(self, id1, side1, id2, side2):
+        if self[id1, side1] > 0 and self[id2, side2] > 0 and (id2, side2) not in self.edges[id1, side1]:
+            return True
+        else:
+            return False
 
+    def next_id(self, id):
+        """Get the next node id in the clockwise direction
+        """
+        return id % self.node_num
 
-def can_connect(n1, side1, n2, side2):
-    if n1[side1] > 0 and n2[side2] > 0:
-        return True
-    else:
+    def exist_edge(self, id1, side1, id2, side2):
+        return (id2, side2) in self.edges[id1, side1]
+
+    def exist_convex_path(self, id1, id2):
+        """Check it there is a convex path going clockwise from id1,+1 to node id2,-1
+        """
+        if (id1 == id2):
+            return True
+        elif (self.exist_edge(id1, 1, id2, -1)):
+            return True
+        else:
+            id1 = self.next_id(id1)
+            while (id1 != id2):
+                if self.exist_edge(id1, 1, id2, -1):
+                    return self.exist_convex_path(id1, id2)
+                else:
+                    id1 = self.next_id(id1)
         return False
 
 
-def connect(n1, side1, n2, side2):
-    if n1[side1] > 0 and n2[side2] > 0:
-        n1.connected(side1)
-        n2.connected(side2)
-        return Edge(n1, side1, n2, side2)
-
-
-def is_cw(n1, n2, n3):
-    """Check if n1=>n2=>n3 is clockwise order in a cyclic list.
+def is_cw(id1, id2, id3):
+    """Check if id1=>id2=>id3 is clockwise order in a cyclic list.
     For example in list [1,2,3,4,5], 1=>3=>5, 3=>5=>1, and 5=>1=>3 are clockwise.
     """
-    assert not (n1.id == n2.id and n2.id ==
-                n3.id), f"is_cw: ERROR: all three ids are the same!"
-    return ((n1 <= n2 and n2 < n3) or (n1 < n2 and n2 <= n3) or
-            (n2 <= n3 and n3 < n1) or (n2 < n3 and n3 <= n1) or
-            (n3 <= n1 and n1 < n2) or (n3 < n1 and n1 <= n2))
-
-
-def next_id(node):
-    """Get the next node id in the clockwise direction
-
-    Args:
-        node (Node): current node
-        NODE_NUM (int): the total number of nodes
-    """
-    return ((node.id - 1) % NODE_NUM)+1
-
-
-def exist_convex_path(n_p, n_n, NODE_NUM):
-    """Check it there is a convex path going clockwise from n1 to n2
-
-    Args:
-        n1 (Node): 
-        n2 (Node): 
-        NODE_NUM (int): the total number of nodes
-    """
-    next_id = n1.id
-    while 
+    assert not (id1 == id2 and id2 ==
+                id3), f"is_cw: ERROR: all three ids are the same!"
+    return ((id1 <= id2 and id2 < id3) or (id1 < id2 and id2 <= id3) or
+            (id2 <= id3 and id3 < id1) or (id2 < id3 and id3 <= id1) or
+            (id3 <= id1 and id1 < id2) or (id3 < id1 and id1 <= id2))

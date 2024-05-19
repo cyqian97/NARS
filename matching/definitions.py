@@ -11,7 +11,7 @@ class MatchingGraph():
     def __keys_asserts__(self, keys):
         assert isinstance(keys, tuple) and len(keys) == 2
         id, side = keys
-        assert isinstance(id, int) and 0 <= id < self.node_num
+        assert isinstance(id, int) and id in self.num_p and id in self.num_n
         assert side == 1 or side == - \
             1, f"__getitem__: ERROR: side must be +1 or -1, but is {side}"
         return id, side
@@ -31,7 +31,7 @@ class MatchingGraph():
             self.num_n[id] = value
 
     def add_node(self, id, n_p, n_n):
-        assert id not in self.num_p and id not in self.num_n
+        assert isinstance(id,int) and id >=0 and id not in self.num_p and id not in self.num_n
         self.node_num += 1
         self.num_p[id] = n_p
         self.num_n[id] = n_n
@@ -87,3 +87,16 @@ def is_cw(id1, id2, id3):
     return ((id1 <= id2 and id2 < id3) or (id1 < id2 and id2 <= id3) or
             (id2 <= id3 and id3 < id1) or (id2 < id3 and id3 <= id1) or
             (id3 <= id1 and id1 < id2) or (id3 < id1 and id1 <= id2))
+
+def check_cross(id1,id2,id3,id4):
+    """check_cross checks if edge id1-id2 crosses edge id3-id4
+
+    Returns:
+        int: if cross, return id = id3/id4 s.t. is_cw(id1,id,id2), else return -1
+    """
+    if is_cw(id1,id3,id2) and not is_cw(id1,id4,id2):
+        return id3
+    elif is_cw(id1,id4,id2) and not is_cw(id1,id3,id2):
+        return id4
+    else:
+        return -1

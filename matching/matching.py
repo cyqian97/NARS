@@ -13,8 +13,9 @@ with open(csv_file_path, mode='r', newline='') as csvfile:
     for row in csvreader:
         # Convert each element in the row to an integer
         id1,side1,id2,side2 = [int(element) for element in row]
-        ground_truth[id1, side1].update([(id2, side2)])
-        ground_truth[id2, side2].update([(id1, side1)])
+        if (side1 == 1 and side2 == -1) or (side1 == -1 and side2 == 1): 
+            ground_truth[id1, side1].update([(id2, side2)])
+            ground_truth[id2, side2].update([(id1, side1)])
         if id1 > max_id:
             max_id = id1
 

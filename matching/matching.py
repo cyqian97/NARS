@@ -5,7 +5,7 @@ from iterate import *
 from collections import defaultdict
 
 ground_truth = defaultdict(set)
-ids = set()
+IDs = set()
 
 # Define the path to your CSV file
 csv_file_path = 'bitcomp.csv'
@@ -15,27 +15,28 @@ with open(csv_file_path, mode='r', newline='') as csvfile:
     csvreader = csv.reader(csvfile)
     for row in csvreader:
         # Convert each element in the row to an integer
-        id1, side1, id2, side2 = [int(element) for element in row]
-        if id1 > node_num:
-            node_num = id1
-        if id2 > node_num:
-            node_num = id2
+        ID1, side1, ID2, side2 = [int(element) for element in row]
+        if ID1 > node_num-1:
+            node_num = ID1+1
+        if ID2 > node_num-1:
+            node_num = ID2+1
         if (side1 == 1 and side2 == -1) or (side1 == -1 and side2 == 1):
-            ground_truth[id1, side1].update([(id2, side2)])
-            ground_truth[id2, side2].update([(id1, side1)])
-            ids.update([id1, id2])
-ids = list(ids)
-ids.sort()
+            ground_truth[ID1, side1].update([(ID2, side2)])
+            ground_truth[ID2, side2].update([(ID1, side1)])
+            IDs.update([ID1, ID2])
+IDs = list(IDs)
+IDs.sort()
 mg = MatchingGraph(node_num)
-for id in ids:
-    n_p = len(ground_truth[(id, 1)])
-    n_n = len(ground_truth[(id, -1)])
-    mg.add_node(id, n_p, n_n)
+for ID in IDs:
+    n_p = len(ground_truth[(ID, 1)])
+    n_n = len(ground_truth[(ID, -1)])
+    mg.add_node(ID, n_p, n_n)
 
 print("Generating all possible matchings...")
-mgs = iteration_matchings(ids, mg)
-
+mgs = iteration_matchings(IDs, mg)
+print(f"\t{len(mgs)} matching generated")
 print("Checking matchings...")
 for mg in tqdm(mgs):
+    print(mg)
     if mg.check_matching():
         print(mg)

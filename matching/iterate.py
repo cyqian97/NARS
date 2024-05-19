@@ -1,19 +1,19 @@
 import itertools
 
 
-def iteration_matchings(ids, mg):
-    if len(ids) == 0:
+def iteration_matchings(IDs, mg):
+    if len(IDs) == 0:
         return [mg]
 
-    id1 = ids[0]
-    feasible_ids = [id2 for id2 in ids if id2 != id and mg[id2, -1] > 0]
-    if len(feasible_ids) < mg[id1, 1]:
+    ID1 = IDs[0]
+    feasible_ids = mg.feasible_ids(ID1,1,-1)
+    if len(feasible_ids) < mg[ID1, 1]:
         return []
 
     mgs = []
-    for combo in itertools.combinations(feasible_ids, mg[id1, 1]):
+    for combo in itertools.combinations(feasible_ids, mg[ID1, 1]):
         _mg = mg.copy()
-        for id2 in combo:
-            _mg.connect(id1, 1, id2, -1)
-        mgs += iteration_matchings(ids[1:], _mg)
+        for ID2 in combo:
+            _mg.connect(ID1, 1, ID2, -1)
+        mgs += iteration_matchings(IDs[1:], _mg)
     return mgs

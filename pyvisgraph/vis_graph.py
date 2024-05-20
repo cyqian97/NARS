@@ -43,7 +43,7 @@ from pyvisgraph.visible_vertices import (
     edge_distance,
     intersect_point,
     on_segment,
-    ccw
+    ccw,
 )
 from pyvisgraph.visible_vertices import closest_point
 
@@ -68,16 +68,35 @@ class VisGraph(object):
     def load(self, filename):
         """Load obstacle graph and visibility graph."""
         with open(filename, "rb") as load:
-            self.graph, self.visgraph, self.input, self.conv_chains, self.bitcomp = pickle.load(
-                load)
+            self.graph, self.visgraph, self.input, self.conv_chains, self.bitcomp = (
+                pickle.load(load)
+            )
 
     def save(self, filename):
         """Save obstacle graph and visibility graph."""
+        self.save_csv(filename)
         with open(filename, "wb") as output:
             pickle.dump(
-                (self.graph, self.visgraph, self.input,
-                 self.conv_chains, self.bitcomp), output, -1
+                (self.graph, self.visgraph, self.input, self.conv_chains, self.bitcomp),
+                output,
+                -1,
             )
+    
+    def save_csv(self,filename):
+        with open(filename + ".csv", "w") as file:
+            for chain_id, chain in self.conv_chains.chains.items():
+                p = chain.start
+                while True:
+                    # record chain_id, side, other chain_id, other side
+                    for bitcomp in self.bitcomp[p]:
+                        dual = bitcomp.dual
+                        file.write(
+                            f"{chain_id},{bitcomp.side},{dual.p1.chain_id},{dual.side}\n"
+                        )
+                    if p == chain.end:
+                        break
+                    else:
+                        p = self.conv_chains.get_next_point(p)
 
     def build(self, input, workers=1, status=True):
         """Build visibility graph based on a list of polygons.
@@ -105,7 +124,7 @@ class VisGraph(object):
         if workers == 1:
             for batch in tqdm(
                 [
-                    points[i: i + batch_size]
+                    points[i : i + batch_size]
                     for i in xrange(0, len(points), batch_size)
                 ],
                 disable=not status,
@@ -117,23 +136,10 @@ class VisGraph(object):
             _inflx_lines(self.graph, self.conv_chains, self.inflx)
             _ext_lines(self.graph, self.conv_chains, self.extlines)
 
-            with open("bitcomp.csv", "w") as file:
-                for chain_id, chain in self.conv_chains.chains.items():
-                    p = chain.start
-                    while (True):
-                        # record chain_id, side, other chain_id, other side
-                        for bitcomp in self.bitcomp[p]:
-                            dual = bitcomp.dual
-                            file.write(f"{chain_id},{bitcomp.side},{dual.p1.chain_id},{dual.side}\n")
-                        if (p == chain.end):
-                            break
-                        else:
-                            p = self.conv_chains.get_next_point(p)
-
         else:
             pool = Pool(workers)
             batches = [
-                (self.graph, points[i: i + batch_size])
+                (self.graph, points[i : i + batch_size])
                 for i in xrange(0, len(points), batch_size)
             ]
 

@@ -123,22 +123,15 @@ class MatchingGraph:
         """Get the next node ID in the counterclockwise direction"""
         return (ID + 1) % self.node_num
 
-    def exist_edge(self, ID1, side1, ID2, side2):
-        return (ID2, side2) in self.edges[ID1, side1]
+    def exist_edge(self, v1, v2):
+        return v2 in self.edges[v1]
 
     def exist_convex_path(self, ID1, ID2):
         """Check it there is a convex path going counterclockwise from ID1,+1 to node ID2,-1"""
         if ID1 == ID2:
             return True
-        elif self.exist_edge(ID1, 1, ID2, -1):
+        elif self.convex_connect.exist_edge((ID1, 1), (ID2, -1)):
             return True
-        else:
-            ID1 = self.next_id(ID1)
-            while ID1 != ID2:
-                if self.exist_edge(ID1, 1, ID2, -1):
-                    return self.exist_convex_path(ID1, ID2)
-                else:
-                    ID1 = self.next_id(ID1)
         return False
 
     def exist_shortest_path(self, ID1, side1, ID2, side2, ID3, ID4):

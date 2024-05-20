@@ -1,6 +1,8 @@
 from copy import deepcopy
 from collections import defaultdict
 
+from itertools import permutations, combinations, product
+
 
 class UGraph(defaultdict):
     def __init__(self):
@@ -71,33 +73,32 @@ class MatchingGraph:
             for ID2 in range(self.node_num)
             if self.can_connect(ID1, side1, ID2, side2)
         ]
-    
-    def add_convex_connect(self,v1,v2):
-        self.convex_connect.add_edge(v1,v2)
-        self.shortest_connect.add_edge(v1,v2)
 
-    def add_shortest_connect(self,v1,v2):
-        self.shortest_connect.add_edge(v1,v2)
+    def add_convex_connect(self, v1, v2):
+        self.convex_connect.add_edge(v1, v2)
+        self.shortest_connect.add_edge(v1, v2)
 
+    def add_shortest_connect(self, v1, v2):
+        self.shortest_connect.add_edge(v1, v2)
 
     def connect(self, ID1, side1, ID2, side2):
         assert ID1 != ID2, f"connect: ERROR: ID1 is equal to ID2, ID1=ID2={ID1}"
         if self.can_connect(ID1, side1, ID2, side2):
             self[ID1, side1] -= 1
             self[ID2, side2] -= 1
-            self.edges.add_edge((ID1, side1),(ID2, side2))
+            self.edges.add_edge((ID1, side1), (ID2, side2))
 
             # update convex connect
             if side1 == 1 and side2 == -1:
-                self.add_convex_connect((ID1, 1),(ID2, -1))
+                self.add_convex_connect((ID1, 1), (ID2, -1))
                 for ID0, side0 in self.convex_connect[ID1, -1]:
                     assert side0 == 1
-                    self.add_convex_connect((ID0, 1),(ID2, -1))
+                    self.add_convex_connect((ID0, 1), (ID2, -1))
             elif side1 == -1 and side2 == 1:
-                self.add_convex_connect((ID2, 1),(ID1, -1))
+                self.add_convex_connect((ID2, 1), (ID1, -1))
                 for ID0, side0 in self.convex_connect[ID2, -1]:
                     assert side0 == 1
-                    self.add_convex_connect((ID0, 1),(ID1, -1))
+                    self.add_convex_connect((ID0, 1), (ID1, -1))
             # update shortest connect
             elif side1 == 1 and side2 == 1:
                 pass
@@ -153,16 +154,58 @@ class MatchingGraph:
         ]
 
     def check_matching(self):
-        edges = self.all_edges()
-        for i in range(len(edges) - 1):
-            edge1 = edges[i]
-            for j in range(i + 1, len(edges)):
-                edge2 = edges[j]
-                id_in = check_cross(edge1[0], edge1[2], edge2[0], edge2[2])
-                if id_in == edge2[0] and not self.exist_convex_path(id_in, edge1[2]):
-                    return False
-                elif id_in == edge2[2] and not self.exist_convex_path(edge1[0], id_in):
-                    return False
+        for edge1, edge2 in permutations(self.all_edges(), 2):
+            for ((e1_id1, e1_side1), (e1_id2, e1_side2)), (
+                (e2_id1, e2_side1),
+                (e2_id2, e2_side2),
+            ) in product(permutations(edge1), permutations(edge2)):
+                # case 1: (1+,2-) & (1-,2+)
+                if (
+                    e1_id1 == e2_id1
+                    and e1_id2 == e2_id2
+                    and e1_side1 == 1
+                    and e1_side2 == -1
+                    and e2_side1 == -1
+                    and e2_side2 == 1
+                ):
+                    if not (
+                        self.exist_edge((e1_id1, 1), (e2_id2, 1))
+                        and self.exist_edge((e1_id2, -1), (e2_id1, -1))
+                    ):
+                        return False
+                # case 2: 1=>2=>3 & (1,2+) & (1-,3-)
+                elif (
+                    e1_id1 == e2_id1
+                    and is_ccw(e1_id1, e1_id2, e2_id2)
+                    and e1_side2 == 1
+                    and e2_id2 == -1
+                ):
+                    if not self.exist_convex_path(
+                        e1_id2, e2_id2
+                    ) and self.exist_shortest_path((e1_id2, 1), (e2_id2, -1), e1_id1):
+                        return False
+                # case 3: 1=>3=>2=>4 & (1+,2) & (3-,4)
+                elif (
+                    is_ccw(e1_id1, e2_id1, e1_id2, e2_id2)
+                    and e1_side1 == 1
+                    and e2_side1 == -1
+                ):
+                    if not self.exist_convex_path(e1_id1, e2_id1):
+                        return False
+                # case 4: 1=>2=>3=>4 & (1,2) & (3,4)
+                elif (
+                    is_ccw(e1_id1, e1_id2, e2_id1, e2_id2)
+                ):
+                    # case 4.1: (1-,2) & (3-,4)
+                    if e1_side1 == -1 and e2_side1 == -1 and not self.exist_shortest_path((e1_id1, -1), (e2_id1, -1)):
+                        return False
+                    # case 4.2: (1,2+) & (3,4+)
+                    if e1_side2 == 1 and e2_side2 == 1 and not self.exist_shortest_path((e1_id2, 1), (e2_id2, 1)):
+                        return False
+                    # case 4.2: (1-,2) & (3,4+)
+                    if e1_side1 == -1 and e2_side2 == 1 and not self.exist_shortest_path((e1_id1, -1), (e2_id2, 1)):
+                        return False
+
         return True
 
     def __str__(self):
@@ -172,34 +215,54 @@ class MatchingGraph:
         return s
 
 
-def is_cw(ID1, ID2, ID3):
-    """Check if ID1=>ID2=>ID3 is counterclockwise order in a cyclic list.
+def is_ccw(ID1, ID2, ID3, *args):
+    """Check if ID1=>ID2=>ID3=>... is counterclockwise order in a cyclic list.
     For example in list [1,2,3,4,5], 1=>3=>5, 3=>5=>1, and 5=>1=>3 are counterclockwise.
     """
-    # TODO: add side check into this fucntion
-    assert not (ID1 == ID2 and ID2 == ID3), f"is_cw: ERROR: all three ids are the same!"
-    return (
-        (ID1 <= ID2 and ID2 < ID3)
-        or (ID1 < ID2 and ID2 <= ID3)
-        or (ID2 <= ID3 and ID3 < ID1)
-        or (ID2 < ID3 and ID3 <= ID1)
-        or (ID3 <= ID1 and ID1 < ID2)
-        or (ID3 < ID1 and ID1 <= ID2)
-    )
-
-
-def check_cross(ID1, ID2, ID3, ID4):
-    """check_cross checks if edge ID1-ID2 crosses edge ID3-ID4
-
-    Returns:
-        int: if cross, return ID = ID3/ID4 s.t. is_cw(ID1,ID,ID2), else return -1
-    """
-    # TODO: add side check into this fucntion
-    if ID1 == ID3 or ID1 == ID4 or ID2 == ID3 or ID2 == ID4:
-        return -1
-    elif is_cw(ID1, ID3, ID2) and not is_cw(ID1, ID4, ID2):
-        return ID3
-    elif is_cw(ID1, ID4, ID2) and not is_cw(ID1, ID3, ID2):
-        return ID4
+    assert not (ID1 == ID2 == ID3), f"is_ccw: ERROR: all three ids are the same!"
+    if args:
+        l = [ID1, ID2, ID3] + list(args)  # TODO: remove duplicated element
+        return all(
+            [
+                is_ccw(l[i], l[(i + 1) % len(l)], l[(i + 2) % len(l)])
+                for i in range(len(l))
+            ]
+        )
     else:
-        return -1
+        return (
+            (ID1 < ID2 and ID2 < ID3)
+            or (ID2 < ID3 and ID3 < ID1)
+            or (ID3 < ID1 and ID1 < ID2)
+        )
+
+
+# def check_cross(edeg1, edeg2):
+#     """check_cross checks if edge ID1-ID2 crosses edge ID3-ID4.
+
+#     Returns:
+#         int: if cross, return ID = ID3/ID4 s.t. is_ccw(ID1,ID,ID2), else return -1
+#     """
+#     for e1, e2 in permutations([edeg1, edeg2]):
+#         for (v1, v2), (v3, v4) in product(permutations(e1), permutations(e2)):
+#             if (
+#                 v1[0] == v3[0]
+#                 and v2[0] == v4[0]
+#                 and v1[1] == 1
+#                 and v2[1] == -1
+#                 and v3[1] == -1
+#                 and v4[1] == 1
+#             ):
+#                 # exist (v1[0], 1) - (v4[0],1), (v2[0], -1) - (v3[0],-1)
+#                 return
+#             if v1[0] == v3[0]:
+#                 return
+
+# TODO: add side check into this fucntion
+# if ID1 == ID3 or ID1 == ID4 or ID2 == ID3 or ID2 == ID4:
+#     return -1
+# elif is_ccw(ID1, ID3, ID2) and not is_ccw(ID1, ID4, ID2):
+#     return ID3
+# elif is_ccw(ID1, ID4, ID2) and not is_ccw(ID1, ID3, ID2):
+#     return ID4
+# else:
+#     return -1

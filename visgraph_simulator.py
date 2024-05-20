@@ -170,6 +170,7 @@ def help_screen():
     while helping:
         for event in pygame.event.get():
             quit_event(event)
+            print(event)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_h:
                     helping = False

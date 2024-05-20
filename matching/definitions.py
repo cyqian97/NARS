@@ -81,11 +81,7 @@ class MatchingGraph:
             and self[ID2, side2] > 0
             and (ID2, side2) not in self.edges[ID1, side1]
         ):
-            # In simple connect environment, (i,1,j,-1) and ()
-            if ():
-                return False
-            else:
-                return True
+            return True
         else:
             return False
 

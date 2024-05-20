@@ -2,6 +2,18 @@ from copy import deepcopy
 from collections import defaultdict
 
 
+class UGraph(defaultdict):
+    def __init__(self):
+        super().__init__(set)
+
+    def add_edge(self, v1, v2):
+        self[v1].update([v2])
+        self[v2].update([v1])
+
+    def exist_edge(self, v1, v2):
+        return v2 in self[v1]
+
+
 class MatchingGraph:
     def __init__(self, node_num):
         """Matching graph data structure"""
@@ -9,15 +21,12 @@ class MatchingGraph:
         self.num_p = {}  # The remaining positive connector numbers of nodes
         self.num_n = {}  # The remaining negative connector numbers of nodes
         # Current edges. {(ID1,side1):[(ID2,side2),(ID2,side3)]}. Must also include {(ID2,side2):(ID1,side1)}
-        self.edges = defaultdict(set)
+        self.edges = UGraph()
+        self.convex_connect = UGraph()
+        self.shortest_connect = UGraph()
 
-    def copy(self, copy_edge=True):
-        mg = MatchingGraph(self.node_num)
-        mg.num_n = deepcopy(self.num_n)
-        mg.num_p = deepcopy(self.num_p)
-        if copy_edge:
-            mg.edges = deepcopy(self.edges)
-        return mg
+    def copy(self):
+        return deepcopy(self)
 
     def __keys_asserts__(self, keys):
         assert isinstance(keys, tuple) and len(keys) == 2
@@ -62,14 +71,39 @@ class MatchingGraph:
             for ID2 in range(self.node_num)
             if self.can_connect(ID1, side1, ID2, side2)
         ]
+    
+    def add_convex_connect(self,v1,v2):
+        self.convex_connect.add_edge(v1,v2)
+        self.shortest_connect.add_edge(v1,v2)
+
+    def add_shortest_connect(self,v1,v2):
+        self.shortest_connect.add_edge(v1,v2)
+
 
     def connect(self, ID1, side1, ID2, side2):
         assert ID1 != ID2, f"connect: ERROR: ID1 is equal to ID2, ID1=ID2={ID1}"
         if self.can_connect(ID1, side1, ID2, side2):
             self[ID1, side1] -= 1
             self[ID2, side2] -= 1
-            self.edges[ID1, side1].update([(ID2, side2)])
-            self.edges[ID2, side2].update([(ID1, side1)])
+            self.edges.add_edge((ID1, side1),(ID2, side2))
+
+            # update convex connect
+            if side1 == 1 and side2 == -1:
+                self.add_convex_connect((ID1, 1),(ID2, -1))
+                for ID0, side0 in self.convex_connect[ID1, -1]:
+                    assert side0 == 1
+                    self.add_convex_connect((ID0, 1),(ID2, -1))
+            elif side1 == -1 and side2 == 1:
+                self.add_convex_connect((ID2, 1),(ID1, -1))
+                for ID0, side0 in self.convex_connect[ID2, -1]:
+                    assert side0 == 1
+                    self.add_convex_connect((ID0, 1),(ID1, -1))
+            # update shortest connect
+            elif side1 == 1 and side2 == 1:
+                pass
+            elif side1 == 1 and side2 == 1:
+                pass
+
             return True
         else:
             return False
@@ -86,14 +120,14 @@ class MatchingGraph:
             return False
 
     def next_id(self, ID):
-        """Get the next node ID in the clockwise direction"""
-        return (ID+1) % self.node_num
+        """Get the next node ID in the counterclockwise direction"""
+        return (ID + 1) % self.node_num
 
     def exist_edge(self, ID1, side1, ID2, side2):
         return (ID2, side2) in self.edges[ID1, side1]
 
     def exist_convex_path(self, ID1, ID2):
-        """Check it there is a convex path going clockwise from ID1,+1 to node ID2,-1"""
+        """Check it there is a convex path going counterclockwise from ID1,+1 to node ID2,-1"""
         if ID1 == ID2:
             return True
         elif self.exist_edge(ID1, 1, ID2, -1):
@@ -105,6 +139,10 @@ class MatchingGraph:
                     return self.exist_convex_path(ID1, ID2)
                 else:
                     ID1 = self.next_id(ID1)
+        return False
+
+    def exist_shortest_path(self, ID1, side1, ID2, side2, ID3, ID4):
+        """Check it there is a shortest path going from ID1,side1 to node ID2, side while touching convex curves between ID3 and ID4 are allowed"""
         return False
 
     def all_edges(self):
@@ -142,8 +180,8 @@ class MatchingGraph:
 
 
 def is_cw(ID1, ID2, ID3):
-    """Check if ID1=>ID2=>ID3 is clockwise order in a cyclic list.
-    For example in list [1,2,3,4,5], 1=>3=>5, 3=>5=>1, and 5=>1=>3 are clockwise.
+    """Check if ID1=>ID2=>ID3 is counterclockwise order in a cyclic list.
+    For example in list [1,2,3,4,5], 1=>3=>5, 3=>5=>1, and 5=>1=>3 are counterclockwise.
     """
     # TODO: add side check into this fucntion
     assert not (ID1 == ID2 and ID2 == ID3), f"is_cw: ERROR: all three ids are the same!"

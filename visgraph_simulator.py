@@ -335,7 +335,7 @@ class Simulator:
         directory = "./environments"  # Adjust this path to your directory
 
         # Pattern to match the files with datetime format "YYYY-MM-DD_HH-MM-SS"
-        pattern = r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}"
+        pattern = r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$"
 
         # List all files in the directory
         files = glob.glob(os.path.join(directory, "*"))

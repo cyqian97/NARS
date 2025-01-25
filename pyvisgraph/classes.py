@@ -6,6 +6,14 @@ from numpy.linalg import norm
 
 class Point(object):
     __slots__ = ("x", "y", "polygon_id","chain_id")
+    """Point class
+
+    Attributes:
+        x (float): x coordinate
+        y (float): y coordinate
+        polygon_id (int): the id of the polygon it belongs to
+        chain_id (int): the id of the convex chain it belongs to
+    """
 
     def __init__(self, x, y, polygon_id=-1):
         self.x = float(x)
@@ -76,6 +84,14 @@ RIGHT = -1
 
 class Edge(object):
     __slots__ = ("p1", "p2", "side","dual")
+    """Edge class
+
+    Attributes:
+        p1 (Point): The first point
+        p2 (Point): The second point
+        side (Int): The side of the edge, can have different meanings for different types of edges
+        dual (Edge): The dual edge. Only applicable to bitangent complement lines.
+    """
 
     def __init__(self, point1, point2, side = None):
         self.p1 = point1
@@ -122,6 +138,15 @@ class Edge(object):
 
 class Chain():
     __slots__ = ("chain_id", "start","end","vertices","edges")
+    """Chain contains a connected chain of points and edges.
+     
+    Attributes:
+        chain_id (int): The id of the chain
+        start (Point): The start point
+        end (Point): The end point
+        vertices (set): The set of all vertices in the chain
+        edges (set): The set of all edges in the chain
+    """
     def __init__(self,chain_id,vertices,edges):
         assert isinstance(vertices,set), "vertices must be a set"
         assert isinstance(edges,set), "edges must be a set"

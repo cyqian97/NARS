@@ -32,7 +32,7 @@ import os
 import re
 import math
 from utils import *
-from app.painter import *
+from app.display import *
 
 pygame.init()
 gameDisplay = init_game_display()
@@ -47,12 +47,7 @@ pygame.display.set_caption("NARS Simulator")
 clock = pygame.time.Clock()
 
 
-### Draw functions
-
-
-
 def help_screen():
-
     helping = True
     while helping:
         draw_help_screen()
@@ -63,8 +58,6 @@ def help_screen():
                     helping = False
                 elif event.key == pygame.K_d:
                     helping = False
-
-        
         pygame.display.update()
         clock.tick(10)
 

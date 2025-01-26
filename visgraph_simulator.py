@@ -203,10 +203,9 @@ def read_path():
 
 def game_loop():
     sim = Simulator()
+    
     gameExit = False
-
     cursor_pos = None
-
     path_reader = None
 
     is_reading_path = False
@@ -216,17 +215,18 @@ def game_loop():
     while not gameExit:
         # Event loop
         for event in pygame.event.get():
-            pos = pygame.mouse.get_pos()
+            # Check if we should quit the app
             quit_event(event)
+            
+            # Get current mouse position
+            pos = pygame.mouse.get_pos()
+            
+            
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_h:
                     help_screen()
-                # elif event.key == pygame.K_g:
-                #     sim.show_static_visgraph = not sim.show_static_visgraph
                 elif event.key == pygame.K_p:
-                    sim.mode_draw = False
                     sim.toggle_path_mode()
-
                 elif event.key == pygame.K_d:
                     sim.toggle_draw_mode()
                 elif event.key == pygame.K_s:
@@ -239,6 +239,8 @@ def game_loop():
                         sim.draw_point_undo()
                     elif event.key == pygame.K_c:
                         sim.clear_all()
+                    elif event.key == pygame.K_g:
+                        sim.show_static_visgraph = not sim.show_static_visgraph
                     elif event.key == pygame.K_l:
                         sim.load_map()
                 elif event.type == pygame.MOUSEBUTTONUP:

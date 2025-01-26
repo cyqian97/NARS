@@ -48,6 +48,7 @@ pygame.display.set_caption("NARS Simulator")
 clock = pygame.time.Clock()
 
 
+### Draw functions
 def draw_polygon(polygon, color, size, complete=True):
     if complete:
         if len(polygon) > 1:
@@ -145,17 +146,6 @@ def draw_text(mode_txt, color, size, x, y):
     gameDisplay.blit(text, (x, y))
 
 
-def quit_event(event):
-    if event.type == pygame.QUIT:
-        pygame.quit()
-        quit()
-    elif event.type == pygame.KEYUP and (
-        event.key == pygame.K_q or event.key == pygame.K_ESCAPE
-    ):
-        pygame.quit()
-        quit()
-
-
 def help_screen():
     rectw = 550
     recth = 500
@@ -231,6 +221,17 @@ def help_screen():
 
         pygame.display.update()
         clock.tick(10)
+
+
+def quit_event(event):
+    if event.type == pygame.QUIT:
+        pygame.quit()
+        quit()
+    elif event.type == pygame.KEYUP and (
+        event.key == pygame.K_q or event.key == pygame.K_ESCAPE
+    ):
+        pygame.quit()
+        quit()
 
 
 class Simulator:

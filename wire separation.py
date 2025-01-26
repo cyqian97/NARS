@@ -1,3 +1,5 @@
+### This is a pygame application to test the idea of wire separation
+
 import pygame
 import os
 import sys

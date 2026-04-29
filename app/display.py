@@ -1,8 +1,11 @@
+import math
 import pygame
+from collections import defaultdict
 from numpy import array
 
 from utils import *
 import pyvisgraph as vg
+from pyvisgraph.visible_vertices import intersect_point, edge_distance
 
 # The unique gameDisplay variable
 gameDisplay = None
@@ -116,6 +119,106 @@ def draw_text(mode_txt, color, size, x, y):
     font = pygame.font.SysFont(None, size)
     text = font.render(mode_txt, True, color)
     gameDisplay.blit(text, (x, y))
+
+
+def _compute_shadow_endpoint(robot_pos, gap_vertex, graph):
+    """Cast ray from robot_pos through gap_vertex, return (Point, Edge) of first hit past gap_vertex."""
+    dx = gap_vertex.x - robot_pos.x
+    dy = gap_vertex.y - robot_pos.y
+    length = math.sqrt(dx * dx + dy * dy)
+    if length == 0:
+        return None, None
+    far = vg.Point(gap_vertex.x + dx / length * 3000,
+                   gap_vertex.y + dy / length * 3000)
+    min_dist = float('inf')
+    nearest = None
+    hit_edge = None
+    for edge in graph.get_edges():
+        if gap_vertex in edge:
+            continue
+        p = intersect_point(gap_vertex, far, edge)
+        if p is None:
+            continue
+        if not (min(edge.p1.x, edge.p2.x) - 1 <= p.x <= max(edge.p1.x, edge.p2.x) + 1):
+            continue
+        if not (min(edge.p1.y, edge.p2.y) - 1 <= p.y <= max(edge.p1.y, edge.p2.y) + 1):
+            continue
+        if (p.x - gap_vertex.x) * dx + (p.y - gap_vertex.y) * dy <= 0:
+            continue
+        d = edge_distance(gap_vertex, p)
+        if d < min_dist:
+            min_dist = d
+            nearest = p
+            hit_edge = edge
+    return nearest, hit_edge
+
+
+def _build_shadow_graph(graph, shadow_insertions):
+    """Return next_pt/prev_pt dicts mirroring graph's directed edges, with shadow endpoints spliced in."""
+    next_pt = {}
+    prev_pt = {}
+    for edge in graph.get_edges():
+        next_pt[edge.p1] = edge.p2
+        prev_pt[edge.p2] = edge.p1
+
+    edge_to_pts = defaultdict(list)
+    for shadow_pt, hit_edge in shadow_insertions:
+        edge_to_pts[hit_edge].append(shadow_pt)
+
+    for hit_edge, pts in edge_to_pts.items():
+        # sort shadow points along edge direction so insertion order is correct
+        pts.sort(key=lambda p: edge_distance(hit_edge.p1, p))
+        chain = [hit_edge.p1] + pts + [hit_edge.p2]
+        for i in range(len(chain) - 1):
+            next_pt[chain[i]] = chain[i + 1]
+            prev_pt[chain[i + 1]] = chain[i]
+
+    return next_pt, prev_pt
+
+
+def _trace_invisible_area(gap, shadow_pt, next_pt, prev_pt, max_steps=5000):
+    """Walk polygon boundary from gap.vertex to shadow_pt, returning the vertex list."""
+    vertices = [gap.vertex]
+    current = gap.vertex
+    for _ in range(max_steps):
+        nxt = next_pt.get(current) if gap.side == vg.CCW else prev_pt.get(current)
+        if nxt is None:
+            break
+        vertices.append(nxt)
+        if nxt == shadow_pt:
+            break
+        current = nxt
+    return vertices
+
+
+def draw_invisible_areas(robot, graph):
+    """Draw the shadow polygon behind each gap onto a single semi-transparent overlay."""
+    global gameDisplay
+    if robot is None or not robot.gaps:
+        return
+
+    # Step 1: shadow endpoint for every gap
+    shadow_info = []
+    for gap in robot.gaps:
+        shadow_pt, hit_edge = _compute_shadow_endpoint(robot.pos, gap.vertex, graph)
+        if shadow_pt is not None and hit_edge is not None:
+            shadow_info.append((gap, shadow_pt, hit_edge))
+    if not shadow_info:
+        return
+
+    # Step 2: polygon graph copy with shadow endpoints inserted
+    next_pt, prev_pt = _build_shadow_graph(
+        graph, [(sp, he) for _, sp, he in shadow_info]
+    )
+
+    # Step 3: trace each gap's invisible polygon and draw
+    overlay = pygame.Surface((display_width, display_height), pygame.SRCALPHA)
+    for gap, shadow_pt, _ in shadow_info:
+        vertices = _trace_invisible_area(gap, shadow_pt, next_pt, prev_pt)
+        if len(vertices) >= 3:
+            pts = [(int(p.x), int(p.y)) for p in vertices]
+            pygame.draw.polygon(overlay, (80, 80, 80, 160), pts)
+    gameDisplay.blit(overlay, (0, 0))
 
 
 def draw_help_screen():

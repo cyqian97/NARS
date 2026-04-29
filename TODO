@@ -1,0 +1,15 @@
+# Shaded area
+
+1. For each detected gap, not only compute the gap point (the start point), but also compute the gap end point
+    - That will be computed by extending the line from the gap point along the gap direction and find the first intersection
+    - There should already been way to do similar intersection checks
+    - the endpoint will drop in the middle of a line
+    - make another copy of the original polygon graph, add those endpoints between the two ends of the polygon edge
+    - the new graph should also allow clockwise or counterclockwise tracing of vertices
+
+2. Now from each gap point, you will going gradually find the whole invisible area:
+    - if the gap is a left gap, start tracing new polygon counterclockwise, and clockwise for a right gap
+    - if the endpoint of this specific gap is reached, then this path defines an invisible area 
+    - if the starting point of another gap is reached (this must be different in left or right), then go to the endpoint of the second gap, and keep tracing in the same direction until the end point of the initial gap is reached.
+
+3. Color these invisble areas in gray

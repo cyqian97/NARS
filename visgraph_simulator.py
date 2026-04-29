@@ -370,6 +370,9 @@ def game_loop():
                     1,
                 )
 
+        if sim.robot and sim.built:
+            draw_invisible_areas(sim.robot, sim.vis_graph.graph)
+
         draw_gap_sensor(sim.robot)
         if len(sim.path) > 1:
             draw_polygon(sim.path, brown, 3, complete=False)

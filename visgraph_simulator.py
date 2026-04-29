@@ -28,6 +28,7 @@ from numpy import array
 import pygame
 import datetime
 import glob
+import json
 import os
 import re
 import math
@@ -155,40 +156,26 @@ class Simulator:
         return False
 
     def save_map(self):
-        # Prompt the user for input
-        file_name = ""  # input("Enter file name: ")
-        if not file_name:
-            # Use the current time as the file name
-            # Format the time as a string suitable for a file name
-            file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        # Check if 'environments' is a folder under the current directory
+        file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".json"
         if not os.path.isdir("environments"):
-            # Create 'environments' if it doesn't exist
             os.makedirs("environments")
-        self.vis_graph.save(
-            os.path.join("environments", file_name)
-        )  # Check if the input is empty
-        print(f"File saved: {file_name}")
+        path = os.path.join("environments", file_name)
+        data = {"polygons": [[[p.x, p.y] for p in polygon] for polygon in self.polygons]}
+        with open(path, "w") as f:
+            json.dump(data, f)
+        print(f"File saved: {path}")
 
     def load_map(self):
-        # Directory where the files are located
-        directory = "./environments"  # Adjust this path to your directory
-
-        # Pattern to match the files with datetime format "YYYY-MM-DD_HH-MM-SS"
-        pattern = r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}"
-
-        # List all files in the directory
-        files = glob.glob(os.path.join(directory, "*"))
-
-        # Filter files that match the pattern
+        directory = "./environments"
+        pattern = r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.json"
+        files = glob.glob(os.path.join(directory, "*.json"))
         filtered_files = [f for f in files if re.search(pattern, os.path.basename(f))]
-
-        # Find the most recently created file among the filtered files
         if filtered_files:
             latest_file = max(filtered_files, key=os.path.getctime)
             print(f"Loading the latest file: {latest_file}")
-            self.vis_graph.load(latest_file)
-            self.polygons = self.vis_graph.input
+            with open(latest_file, "r") as f:
+                data = json.load(f)
+            self.polygons = [[vg.Point(p[0], p[1]) for p in polygon] for polygon in data["polygons"]]
             self.build()
         else:
             print("No files found matching the pattern.")

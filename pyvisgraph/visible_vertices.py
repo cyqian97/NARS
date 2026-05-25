@@ -30,15 +30,14 @@ INF = 10000
 CCW = 1
 CW = -1
 COLLINEAR = 0
-"""Due to floating point representation error, some functions need to
-   truncate floating point numbers to a certain tolerance."""
+
+# Tolerance for angle2(): cos value is rounded to COLIN_TOLERANCE decimal places.
 COLIN_TOLERANCE = 10
 T = 10**COLIN_TOLERANCE
 T2 = 10.0**COLIN_TOLERANCE
-T_ccw = 10 ** (-11)
+# Tolerance for ccw(): normalized cross product |sin θ| < T_ccw is treated as collinear.
+T_ccw = 1e-11
 T_on_segment = 0
-
-# TODO: change function name to bitangent_lines
 
 
 def bitangent_lines(point, graph, scan="full"):
@@ -309,7 +308,7 @@ def inflection_lines(graph, conv_chain, inflx):
             inflx.add_edge(edge)
 
 
-def extention_lines(graph, conv_chain, extlines):
+def extension_lines(graph, conv_chain, extlines):
     # lines where the gap vertex changes
     # They are extension of convex chains except for the inflection lines
     for chain_id, chain in conv_chain.chains.items():
@@ -574,16 +573,6 @@ def ccw(A, B, C):
         return CW
     else:
         return 0
-
-
-#     """Return 1 if counter clockwise, -1 if clock wise, 0 if collinear"""
-#     #  Rounding this way is faster than calling round()
-#     area = int(((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x)) * T) / T2
-#     if area > 0:
-#         return CCW
-#     if area < 0:
-#         return CW
-#     return 0
 
 
 def on_segment(p, q, r):

@@ -5,21 +5,19 @@ from numpy.linalg import norm
 
 
 class Point(object):
-    __slots__ = ("x", "y", "polygon_id","chain_id")
+    __slots__ = ("x", "y", "polygon_id")
     """Point class
 
     Attributes:
         x (float): x coordinate
         y (float): y coordinate
-        polygon_id (int): the id of the polygon it belongs to
-        chain_id (int): the id of the convex chain it belongs to
+        polygon_id (int): the id of the polygon it belongs to (-1 if none)
     """
 
     def __init__(self, x, y, polygon_id=-1):
         self.x = float(x)
         self.y = float(y)
         self.polygon_id = polygon_id
-        self.chain_id = -1
 
     @classmethod
     def from_vec(cls, vec):
@@ -76,10 +74,6 @@ class Point(object):
 
     def __truediv__(self, num):
         return Point(self.x / num, self.y / num)
-
-
-LEFT = 1
-RIGHT = -1
 
 
 class Edge(object):
@@ -155,8 +149,6 @@ class Chain():
         self.end = None
         self.vertices = vertices
         self.edges = edges
-        for v in self.vertices:
-            v.chain_id = chain_id
 
     def add_edges(self,edges):
         self.edges.update(edges)

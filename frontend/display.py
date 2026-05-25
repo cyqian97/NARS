@@ -7,16 +7,16 @@ from utils import *
 import pyvisgraph as vg
 from pyvisgraph.visible_vertices import intersect_point, edge_distance
 
-# The unique gameDisplay variable
 gameDisplay = None
-
 display_width = 1600
 display_height = 900
+
 
 def init_game_display():
     global gameDisplay
     gameDisplay = pygame.display.set_mode((display_width, display_height))
     return gameDisplay
+
 
 def draw_polygon(polygon, color, size, complete=True):
     global gameDisplay
@@ -46,19 +46,11 @@ def draw_edges_side(edges, color1, color2, size):
     for edge in edges:
         if edge.side == 1:
             pygame.draw.line(
-                gameDisplay,
-                color1,
-                (edge.p1.x, edge.p1.y),
-                (edge.p2.x, edge.p2.y),
-                size,
+                gameDisplay, color1, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
             )
         elif edge.side == -1:
             pygame.draw.line(
-                gameDisplay,
-                color2,
-                (edge.p1.x, edge.p1.y),
-                (edge.p2.x, edge.p2.y),
-                size,
+                gameDisplay, color2, (edge.p1.x, edge.p1.y), (edge.p2.x, edge.p2.y), size
             )
         else:
             raise Exception(f"Edge side should be -1 or 1, not {edge.side}")
@@ -71,25 +63,13 @@ def draw_vertices(points, color, size):
 
 
 def draw_star(screen, color, point, size):
-    global gameDisplay
-    """
-    Draws a 5-point star centered at 'center' with a given 'size' and 'color' on 'screen'.
-    - screen: pygame.Surface where the star will be drawn.
-    - center: Tuple (x, y) coordinates for the center of the star.
-    - size: The radius of the circle in which the star fits.
-    - color: The color of the star.
-    """
     x, y = point
-    points = []
-    # Loop to calculate the points for both the outer and inner vertices
+    pts = []
     for i in range(10):
         radius = size if i % 2 == 0 else size / 2
-        # 36 degrees between each point, starting facing upwards
         angle = math.radians(i * 36 - 90)
-        point_x = x + math.cos(angle) * radius
-        point_y = y + math.sin(angle) * radius
-        points.append((point_x, point_y))
-    pygame.draw.polygon(screen, color, points)
+        pts.append((x + math.cos(angle) * radius, y + math.sin(angle) * radius))
+    pygame.draw.polygon(screen, color, pts)
 
 
 def draw_gap_sensor(robot):
@@ -100,19 +80,19 @@ def draw_gap_sensor(robot):
     pygame.draw.circle(gameDisplay, black, center, 10)
     if robot:
         for gap in robot.gaps:
-            dir = gap.dir
-            start = center + radius * dir
-            end = center + (radius + 6) * dir
-            text_center = center + (radius + 16) * dir - array([5, 5])
+            d = gap.dir
+            start = center + radius * d
+            end = center + (radius + 6) * d
+            text_pos = center + (radius + 16) * d - array([5, 5])
             if gap.side == vg.CCW:
                 pygame.draw.line(gameDisplay, red, start, end, 3)
-                draw_text(str(gap.id), red, 25, text_center[0], text_center[1])
+                draw_text(str(gap.id), red, 25, text_pos[0], text_pos[1])
             elif gap.side == vg.CW:
                 pygame.draw.line(gameDisplay, blue, start, end, 3)
-                draw_text(str(gap.id), blue, 25, text_center[0], text_center[1])
+                draw_text(str(gap.id), blue, 25, text_pos[0], text_pos[1])
             else:
                 pygame.draw.line(gameDisplay, black, start, end, 3)
-                draw_text(str(gap.id), black, 25, text_center[0], text_center[1])
+                draw_text(str(gap.id), black, 25, text_pos[0], text_pos[1])
 
 
 def draw_text(mode_txt, color, size, x, y):
@@ -122,7 +102,6 @@ def draw_text(mode_txt, color, size, x, y):
 
 
 def _compute_shadow_endpoint(robot_pos, gap_vertex, graph):
-    """Cast ray from robot_pos through gap_vertex, return (Point, Edge) of first hit past gap_vertex."""
     dx = gap_vertex.x - robot_pos.x
     dy = gap_vertex.y - robot_pos.y
     length = math.sqrt(dx * dx + dy * dy)
@@ -154,7 +133,6 @@ def _compute_shadow_endpoint(robot_pos, gap_vertex, graph):
 
 
 def _build_shadow_graph(graph, shadow_insertions):
-    """Return next_pt/prev_pt dicts mirroring graph's directed edges, with shadow endpoints spliced in."""
     next_pt = {}
     prev_pt = {}
     for edge in graph.get_edges():
@@ -166,7 +144,6 @@ def _build_shadow_graph(graph, shadow_insertions):
         edge_to_pts[hit_edge].append(shadow_pt)
 
     for hit_edge, pts in edge_to_pts.items():
-        # sort shadow points along edge direction so insertion order is correct
         pts.sort(key=lambda p: edge_distance(hit_edge.p1, p))
         chain = [hit_edge.p1] + pts + [hit_edge.p2]
         for i in range(len(chain) - 1):
@@ -177,7 +154,6 @@ def _build_shadow_graph(graph, shadow_insertions):
 
 
 def _trace_invisible_area(gap, shadow_pt, next_pt, prev_pt, max_steps=5000):
-    """Walk polygon boundary from gap.vertex to shadow_pt, returning the vertex list."""
     vertices = [gap.vertex]
     current = gap.vertex
     for _ in range(max_steps):
@@ -192,12 +168,10 @@ def _trace_invisible_area(gap, shadow_pt, next_pt, prev_pt, max_steps=5000):
 
 
 def draw_invisible_areas(robot, graph):
-    """Draw the shadow polygon behind each gap onto a single semi-transparent overlay."""
     global gameDisplay
     if robot is None or not robot.gaps:
         return
 
-    # Step 1: shadow endpoint for every gap
     shadow_info = []
     for gap in robot.gaps:
         shadow_pt, hit_edge = _compute_shadow_endpoint(robot.pos, gap.vertex, graph)
@@ -206,12 +180,10 @@ def draw_invisible_areas(robot, graph):
     if not shadow_info:
         return
 
-    # Step 2: polygon graph copy with shadow endpoints inserted
     next_pt, prev_pt = _build_shadow_graph(
         graph, [(sp, he) for _, sp, he in shadow_info]
     )
 
-    # Step 3: trace each gap's invisible polygon and draw
     overlay = pygame.Surface((display_width, display_height), pygame.SRCALPHA)
     for gap, shadow_pt, _ in shadow_info:
         vertices = _trace_invisible_area(gap, shadow_pt, next_pt, prev_pt)
@@ -223,11 +195,8 @@ def draw_invisible_areas(robot, graph):
 
 def draw_help_screen():
     global gameDisplay
-
-    rectw = 550
-    recth = 500
-    rectwi = rectw - 10
-    recthi = recth - 10
+    rectw, recth = 550, 500
+    rectwi, recthi = rectw - 10, recth - 10
     startx = display_width * 0.5 - rectw / 2
     starty = display_height * 0.5 - recth / 2
     startxi = display_width * 0.5 - rectwi / 2
@@ -237,48 +206,15 @@ def draw_help_screen():
 
     draw_text("-- VISIBILITY GRAPH SIMULATOR --", black, 30, startxi + 90, startyi + 10)
     draw_text("Q - QUIT", black, 25, startxi + 10, startyi + 45)
-    draw_text(
-        "H - TOGGLE HELP SCREEN (THIS SCREEN)",
-        black,
-        25,
-        startxi + 10,
-        startyi + 80,
-    )
+    draw_text("H - TOGGLE HELP SCREEN (THIS SCREEN)", black, 25, startxi + 10, startyi + 80)
     draw_text("D - TOGGLE DRAW MODE", black, 25, startxi + 10, startyi + 115)
-    draw_text(
-        "    Draw polygons by left clicking to set a point of the",
-        black,
-        25,
-        startxi + 10,
-        startyi + 150,
-    )
-    draw_text(
-        "    polygon. Right click to close and finish the polygon.",
-        black,
-        25,
-        startxi + 10,
-        startyi + 180,
-    )
-    draw_text(
-        "    U - UNDO LAST POLYGON POINT PLACEMENT",
-        black,
-        25,
-        startxi + 10,
-        startyi + 215,
-    )
+    draw_text("    Draw polygons by left clicking to set a point of the",
+              black, 25, startxi + 10, startyi + 150)
+    draw_text("    polygon. Right click to close and finish the polygon.",
+              black, 25, startxi + 10, startyi + 180)
+    draw_text("    U - UNDO LAST POLYGON POINT PLACEMENT", black, 25, startxi + 10, startyi + 215)
     draw_text("    C - CLEAR THE SCREEN", black, 25, startxi + 10, startyi + 250)
-    draw_text(
-        "P - TOGGLE PATH MODE",
-        black,
-        25,
-        startxi + 10,
-        startyi + 285,
-    )
+    draw_text("P - TOGGLE PATH MODE", black, 25, startxi + 10, startyi + 285)
     draw_text("    L - LOAD PATH", black, 25, startxi + 10, startyi + 320)
     draw_text("S - SAVE MAP", black, 25, startxi + 10, startyi + 355)
     draw_text("L - LOAD MAP", black, 25, startxi + 10, startyi + 390)
-    # draw_text("S - TOGGLE SHORTEST PATH MODE", black, 25, startxi+10, startyi+285)
-    # draw_text("    Left click to set start point, right click to set end point.", black, 25, startxi+10, startyi+320)
-    # draw_text("    Hold left/right mouse button down to drag start/end point.", black, 25, startxi+10, startyi+355)
-    # draw_text("G - TOGGLE POLYGON VISIBILITY GRAPH", black, 25, startxi+10, startyi+425)
-    # draw_text("© Christian August Reksten-Monsen", black, 20, startxi+140, startyi+470)

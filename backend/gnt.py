@@ -1,6 +1,6 @@
 """Gap Navigation Tree (GNT) algorithm — Section IV of Tovar et al. 2007."""
 
-from gap import GapEventType
+from backend.gap import GapEventType
 
 
 # Sentinel and direction constants used by DoublyLinkedList.insert()

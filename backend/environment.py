@@ -8,7 +8,7 @@ import re
 from pyvisgraph import Point, Edge
 from pyvisgraph.vis_graph import VisGraph
 from pyvisgraph.visible_vertices import ccw, edge_cross_point, edge_distance, CCW, CW
-from gap import GapEvent, GapEventType
+from backend.gap import GapEvent, GapEventType
 
 
 class Environment:

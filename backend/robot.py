@@ -1,5 +1,5 @@
 from pyvisgraph import Edge, ccw, CCW, CW
-from gap import Gap, GapEventType, EventInfo, is_tracking_event
+from backend.gap import Gap, GapEventType, EventInfo, is_tracking_event
 from backend.gnt import GNT
 
 

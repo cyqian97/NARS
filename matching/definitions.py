@@ -14,6 +14,16 @@ class UGraph(defaultdict):
 
     def exist_edge(self, v1, v2):
         return v2 in self[v1]
+    
+class DGraph(defaultdict):
+    def __init__(self):
+        super().__init__(set)
+
+    def add_edge(self, v1, v2):
+        self[v1].update([v2])
+
+    def exist_edge(self, v1, v2):
+        return v2 in self[v1]
 
 
 class MatchingGraph:
@@ -25,7 +35,7 @@ class MatchingGraph:
         # Current edges. {(ID1,side1):[(ID2,side2),(ID2,side3)]}. Must also include {(ID2,side2):(ID1,side1)}
         self.edges = UGraph()
         self.convex_connect = UGraph()
-        self.shortest_connect = UGraph()
+        self.shortest_connect = DGraph()
 
     def copy(self):
         return deepcopy(self)
@@ -89,21 +99,38 @@ class MatchingGraph:
             self.edges.add_edge((ID1, side1), (ID2, side2))
 
             # update convex connect
-            if side1 == 1 and side2 == -1:
-                self.add_convex_connect((ID1, 1), (ID2, -1))
-                for ID0, side0 in self.convex_connect[ID1, -1]:
-                    assert side0 == 1
-                    self.add_convex_connect((ID0, 1), (ID2, -1))
-            elif side1 == -1 and side2 == 1:
-                self.add_convex_connect((ID2, 1), (ID1, -1))
-                for ID0, side0 in self.convex_connect[ID2, -1]:
-                    assert side0 == 1
-                    self.add_convex_connect((ID0, 1), (ID1, -1))
+            if (side1 == 1 and side2 == -1) or (side1 == -1 and side2 == 1):
+                self.add_convex_connect((ID1, side1), (ID2, side2))
+                if (side1 == -1):
+                    for ID0, side0 in self.convex_connect[ID1, -1]:
+                        assert side0 == 1
+                        self.add_convex_connect((ID0, 1), (ID2, -1))
+                else:
+                    for ID0, side0 in self.convex_connect[ID2, -1]:
+                        assert side0 == 1
+                        self.add_convex_connect((ID0, 1), (ID1, -1))
             # update shortest connect
             elif side1 == 1 and side2 == 1:
-                pass
-            elif side1 == 1 and side2 == 1:
-                pass
+                if not self.shortest_connect[ID1,1]:
+                    self.shortest_connect.add_edge((ID1, 1), (ID2, 1))
+                elif is_ccw(ID1,ID2,self.shortest_connect[ID1,1][0]):
+                    self.shortest_connect[ID1,1] = (ID2, 1)
+
+                if not self.shortest_connect[ID2,1]:
+                    self.shortest_connect.add_edge((ID2, 1), (ID1, 1))
+                elif is_ccw(ID2,ID1,self.shortest_connect[ID2,1][0]):
+                    self.shortest_connect[ID2,1] = (ID1, 1)
+
+            elif side1 == -1 and side2 == -1:
+                if not self.shortest_connect[ID1,-1]:
+                    self.shortest_connect.add_edge((ID1, -1), (ID2, -1))
+                elif is_ccw(ID1,self.shortest_connect[ID1,-1][0],ID2):
+                    self.shortest_connect[ID1,-1] = (ID2, -1)
+
+                if not self.shortest_connect[ID2,-1]:
+                    self.shortest_connect.add_edge((ID2, -1), (ID1, -1))
+                elif is_ccw(ID2,self.shortest_connect[ID2,-1][0],ID1):
+                    self.shortest_connect[ID2,-1] = (ID1, -1)
 
             return True
         else:
@@ -135,8 +162,18 @@ class MatchingGraph:
             return True
         return False
 
-    def exist_shortest_path(self, ID1, side1, ID2, side2, ID3, ID4):
-        """Check it there is a shortest path going from ID1,side1 to node ID2, side while touching convex curves between ID3 and ID4 are allowed"""
+    def exist_shortest_path(self, n1, n2, ID3=None, ID4=None):
+        """Check it there is a shortest path going from ID1,side1 to node ID2"""
+        if self.exist_edge(n1,n2):
+            return True
+        elif (n1[1] == 1 and n2[1] == -1) and self.exist_convex_path(n1[0], n2[0]):
+            return True
+        elif(n1[1] == -1 and n2[1] == 1) and self.exist_convex_path(n2[0], n1[0]):
+            return True
+        else:
+            #search 
+            pass
+
         return False
 
     def all_edges(self):
@@ -180,9 +217,7 @@ class MatchingGraph:
                     and e1_side2 == 1
                     and e2_id2 == -1
                 ):
-                    if not self.exist_convex_path(
-                        e1_id2, e2_id2
-                    ) and self.exist_shortest_path((e1_id2, 1), (e2_id2, -1), e1_id1):
+                    if not self.exist_shortest_path((e1_id2, 1), (e2_id2, -1), e1_id1):
                         return False
                 # case 3: 1=>3=>2=>4 & (1+,2) & (3-,4)
                 elif (
@@ -193,17 +228,28 @@ class MatchingGraph:
                     if not self.exist_convex_path(e1_id1, e2_id1):
                         return False
                 # case 4: 1=>2=>3=>4 & (1,2) & (3,4)
-                elif (
-                    is_ccw(e1_id1, e1_id2, e2_id1, e2_id2)
-                ):
+                elif is_ccw(e1_id1, e1_id2, e2_id1, e2_id2):
+                    # TODO: Remove duplicated checks in case 4
                     # case 4.1: (1-,2) & (3-,4)
-                    if e1_side1 == -1 and e2_side1 == -1 and not self.exist_shortest_path((e1_id1, -1), (e2_id1, -1)):
+                    if (
+                        e1_side1 == -1
+                        and e2_side1 == -1
+                        and not self.exist_shortest_path((e1_id1, -1), (e2_id1, -1))
+                    ):
                         return False
                     # case 4.2: (1,2+) & (3,4+)
-                    if e1_side2 == 1 and e2_side2 == 1 and not self.exist_shortest_path((e1_id2, 1), (e2_id2, 1)):
+                    if (
+                        e1_side2 == 1
+                        and e2_side2 == 1
+                        and not self.exist_shortest_path((e1_id2, 1), (e2_id2, 1))
+                    ):
                         return False
                     # case 4.2: (1-,2) & (3,4+)
-                    if e1_side1 == -1 and e2_side2 == 1 and not self.exist_shortest_path((e1_id1, -1), (e2_id2, 1)):
+                    if (
+                        e1_side1 == -1
+                        and e2_side2 == 1
+                        and not self.exist_shortest_path((e1_id1, -1), (e2_id2, 1))
+                    ):
                         return False
 
         return True

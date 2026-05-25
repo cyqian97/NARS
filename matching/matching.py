@@ -11,6 +11,7 @@ ground_truth = defaultdict(set)
 IDs = set()
 
 # Define the path to your CSV file
+
 csv_file_path = "environments/2024-05-19_18-05-28.csv"  # "environments/2024-05-19_18-01-26.csv" #'bitcomp.csv'
 node_num = -1
 # Open the CSV file and read it line by line

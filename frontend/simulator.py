@@ -10,7 +10,7 @@ from frontend.display import (
     draw_vertices, draw_gap_sensor, draw_text, draw_invisible_areas,
     draw_help_screen,
 )
-from utils import *
+from utils.utils import *
 
 LEFT = 1
 RIGHT = 3

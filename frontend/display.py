@@ -3,7 +3,7 @@ import pygame
 from collections import defaultdict
 from numpy import array
 
-from utils import *
+from utils.utils import *
 import pyvisgraph as vg
 from pyvisgraph.visible_vertices import intersect_point, edge_distance
 

@@ -27,8 +27,18 @@ N_PATH_POINTS = 1000
 
 
 def generate_frames(svg_path):
-    print(f"Parsing {svg_path} ...")
-    svg_data = parse_svg_env_file(svg_path)
+    # Support "path/to/env.svg_frames" convention:
+    #   input SVG  → "path/to/env.svg"
+    #   output dir → "path/to/env_frames/"
+    if svg_path.endswith('_frames'):
+        actual_svg = svg_path[: -len('_frames')]
+        dir_suffix = '_frames'
+    else:
+        actual_svg = svg_path
+        dir_suffix = ''
+
+    print(f"Parsing {actual_svg} ...")
+    svg_data = parse_svg_env_file(actual_svg)
 
     print(f"  Wall vertices: {len(svg_data['env_polygon_points'])}")
     print(f"  Path control points: {len(svg_data['path_points'])}")
@@ -44,9 +54,9 @@ def generate_frames(svg_path):
     print(f"Interpolating {N_PATH_POINTS} points along path ...")
     path_pts = interpolate_path(svg_data['path_points'], N_PATH_POINTS)
 
-    # Output: environments/<svg_name>/frame_NNNN.svg
-    svg_name = os.path.splitext(os.path.basename(svg_path))[0]
-    out_dir = os.path.join(os.path.dirname(os.path.abspath(svg_path)), svg_name)
+    # Output: environments/<svg_name>[_frames]/frame_NNNN.svg
+    svg_name = os.path.splitext(os.path.basename(actual_svg))[0] + dir_suffix
+    out_dir = os.path.join(os.path.dirname(os.path.abspath(actual_svg)), svg_name)
     os.makedirs(out_dir, exist_ok=True)
     print(f"Output directory: {out_dir}")
 

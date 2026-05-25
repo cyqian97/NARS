@@ -157,6 +157,15 @@ def parse_svg_env_file(svg_path):
         raise ValueError("SVG must contain an element with id='path'")
     path_points = parse_svg_path(path_elem.get('d', ''))
 
+    # --- shadow / near / far style templates ---
+    def get_style(eid):
+        elem = find_id('path', eid)
+        return elem.get('style', '') if elem is not None else ''
+
+    shadow_style = re.sub(r'marker-\w+:url\([^)]*\);?', '', get_style('shadow'))
+    near_style = get_style('near')
+    far_style = get_style('far')
+
     # --- robot group ---
     robot_group = find_id('g', 'robot')
     if robot_group is None:
@@ -178,6 +187,9 @@ def parse_svg_env_file(svg_path):
         'env_path_d': env_d,
         'env_path_style': env_style,
         'env_path_transform': env_transform,
+        'shadow_style': shadow_style,
+        'near_style': near_style,
+        'far_style': far_style,
         'robot_cx_local': first_cx,
         'robot_cy_local': first_cy,
         'robot_group_style': robot_group_style,
@@ -333,7 +345,11 @@ def compute_shadow_polygons(robot_pos, gaps, polygon_graph):
     for gap, shadow_pt, _ in shadow_info:
         verts = _trace_shadow_polygon(gap, shadow_pt, next_pt, prev_pt)
         if len(verts) >= 3:
-            result.append(verts)
+            result.append({
+                'poly': verts,
+                'gap_vertex': gap.vertex,
+                'shadow_pt': shadow_pt,
+            })
     return result
 
 
@@ -353,7 +369,9 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys):
 
     svg_data     -- dict from parse_svg_env_file()
     robot_x/y   -- robot position in SVG coordinate space
-    shadow_polys -- list of shadow polygon vertex lists (vg.Point objects)
+    shadow_polys -- list of dicts with keys poly, gap_vertex, shadow_pt
+
+    Draw order (bottom → top): robot, shadow lines, env, shadow polygons.
     """
     width = svg_data['svg_width']
     height = svg_data['svg_height']
@@ -361,35 +379,58 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys):
     env_d = _xml_escape(svg_data['env_path_d'])
     env_style = _xml_escape(svg_data['env_path_style'])
     env_transform = _xml_escape(svg_data['env_path_transform'])
+    shadow_style = _xml_escape(svg_data.get('shadow_style', ''))
+    near_style = _xml_escape(svg_data.get('near_style', ''))
+    far_style = _xml_escape(svg_data.get('far_style', ''))
 
     cx_local = svg_data['robot_cx_local']
     cy_local = svg_data['robot_cy_local']
     tx = robot_x - cx_local
     ty = robot_y - cy_local
 
-    lines = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        f'<svg width="{width}" height="{height}" viewBox="{viewbox}"',
-        f'     xmlns="http://www.w3.org/2000/svg">',
-        f'  <path id="env" d="{env_d}" style="{env_style}" transform="{env_transform}"/>',
-    ]
-
-    for verts in shadow_polys:
-        pts_str = ' '.join(f'{p.x:.4f},{p.y:.4f}' for p in verts)
-        lines.append(
-            f'  <polygon points="{pts_str}"'
-            f' style="fill:#505050;fill-opacity:0.627;stroke:none;"/>'
-        )
-
+    # --- robot ---
+    robot_parts = []
     robot_style = _xml_escape(svg_data.get('robot_group_style', ''))
-    lines.append(
+    robot_parts.append(
         f'  <g id="robot" style="{robot_style}"'
         f' transform="translate({tx:.6f},{ty:.6f})">'
     )
     for circle_attrs in svg_data['robot_circles']:
         attr_str = ' '.join(f'{k}="{_xml_escape(v)}"' for k, v in circle_attrs.items())
-        lines.append(f'    <circle {attr_str}/>')
-    lines.append('  </g>')
-    lines.append('</svg>')
+        robot_parts.append(f'    <circle {attr_str}/>')
+    robot_parts.append('  </g>')
 
-    return '\n'.join(lines)
+    # --- shadow lines (near/far per gap) ---
+    shadow_line_parts = []
+    for item in shadow_polys:
+        gv = item['gap_vertex']
+        sp = item['shadow_pt']
+        shadow_line_parts.append(
+            f'  <line x1="{robot_x:.4f}" y1="{robot_y:.4f}"'
+            f' x2="{gv.x:.4f}" y2="{gv.y:.4f}" style="{near_style}"/>'
+        )
+        shadow_line_parts.append(
+            f'  <line x1="{gv.x:.4f}" y1="{gv.y:.4f}"'
+            f' x2="{sp.x:.4f}" y2="{sp.y:.4f}" style="{far_style}"/>'
+        )
+
+    # --- env boundary ---
+    env_parts = [
+        f'  <path id="env" d="{env_d}" style="{env_style}" transform="{env_transform}"/>',
+    ]
+
+    # --- shadow polygons ---
+    shadow_poly_parts = []
+    for item in shadow_polys:
+        pts_str = ' '.join(f'{p.x:.4f},{p.y:.4f}' for p in item['poly'])
+        shadow_poly_parts.append(f'  <polygon points="{pts_str}" style="{shadow_style}"/>')
+
+    # Assemble in draw order: shadow polygons → env → shadow lines → robot
+    header = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg width="{width}" height="{height}" viewBox="{viewbox}"',
+        f'     xmlns="http://www.w3.org/2000/svg">',
+    ]
+    return '\n'.join(
+        header + shadow_poly_parts + env_parts + shadow_line_parts + robot_parts + ['</svg>']
+    )

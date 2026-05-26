@@ -87,8 +87,8 @@ def generate_frames(svg_path, show_frame_number=False):
         with open(os.path.join(dirs['sensor_tex'], name + '.tex'), 'w', encoding='utf-8') as f:
             f.write(generate_sensor_tex(gaps))
 
-        with open(os.path.join(dirs['cyclic_svg'], name + '.svg'), 'w', encoding='utf-8') as f:
-            f.write(generate_cyclic_svg(gaps))
+        # with open(os.path.join(dirs['cyclic_svg'], name + '.svg'), 'w', encoding='utf-8') as f:
+        #     f.write(generate_cyclic_svg(gaps))
 
     print(f"Done — {N_PATH_POINTS} frames written to each output directory.")
 

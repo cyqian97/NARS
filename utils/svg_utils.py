@@ -2,6 +2,7 @@
 
 import re
 from collections import defaultdict
+import math
 from math import sqrt
 import xml.etree.ElementTree as ET
 
@@ -364,12 +365,13 @@ def _xml_escape(s):
              .replace('"', '&quot;'))
 
 
-def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys):
+def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=None):
     """Return an SVG string for one animation frame.
 
     svg_data     -- dict from parse_svg_env_file()
     robot_x/y   -- robot position in SVG coordinate space
     shadow_polys -- list of dicts with keys poly, gap_vertex, shadow_pt
+    frame_number -- if not None, renders the frame number in the bottom-right corner
 
     Draw order (bottom → top): robot, shadow lines, env, shadow polygons.
     """
@@ -425,14 +427,29 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys):
         pts_str = ' '.join(f'{p.x:.4f},{p.y:.4f}' for p in item['poly'])
         shadow_poly_parts.append(f'  <polygon points="{pts_str}" style="{shadow_style}"/>')
 
-    # Assemble in draw order: shadow polygons → env → shadow lines → robot
+    # --- frame number label (bottom-right corner) ---
+    frame_label_parts = []
+    if frame_number is not None:
+        vb = [float(v) for v in viewbox.split()]
+        vb_x, vb_y, vb_w, vb_h = vb[0], vb[1], vb[2], vb[3]
+        label_x = vb_x + vb_w - 4
+        label_y = vb_y + vb_h - 4
+        frame_label_parts.append(
+            f'  <text x="{label_x:.4f}" y="{label_y:.4f}"'
+            f' text-anchor="end" dominant-baseline="auto"'
+            f' font-size="{vb_h * 0.03:.4f}" font-family="monospace"'
+            f' fill="#333333" opacity="0.7">{frame_number}</text>'
+        )
+
+    # Assemble in draw order: shadow polygons → env → shadow lines → robot → frame label
     header = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg width="{width}" height="{height}" viewBox="{viewbox}"',
         f'     xmlns="http://www.w3.org/2000/svg">',
     ]
     return '\n'.join(
-        header + shadow_poly_parts + env_parts + shadow_line_parts + robot_parts + ['</svg>']
+        header + shadow_poly_parts + env_parts + shadow_line_parts + robot_parts
+        + frame_label_parts + ['</svg>']
     )
 
 
@@ -507,6 +524,117 @@ def generate_sensor_svg(gaps, size: int = 500, radius: float = 200.0) -> str:
         )
         
         ## Labeling is optional and is currently commented out.
+        # parts.append(
+        #     f'  <text x="{lx:.3f}" y="{ly:.3f}" fill="{color}"'
+        #     f' font-size="{font_size:.2f}" font-family="sans-serif"'
+        #     f' text-anchor="middle" dominant-baseline="middle">{gap.id}</text>'
+        # )
+
+    parts.append('</svg>')
+    return '\n'.join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Cyclic-order SVG
+# ---------------------------------------------------------------------------
+
+def generate_cyclic_svg(gaps, size: int = 500, radius: float = 200.0) -> str:
+    """Return an SVG showing the cyclic order of gaps around the robot.
+
+    Gaps are placed uniformly on a circle (sorted by their clockwise angular
+    direction from the robot).  Arc arrows drawn along the circle between
+    consecutive gaps indicate the clockwise cyclic order.  No background ring
+    or centre dot is drawn.
+
+    Parameters
+    ----------
+    gaps:
+        Iterable of Gap objects (need ``.dir`` and ``.id``).
+    size:
+        Canvas width and height in pixels.
+    radius:
+        Radius of the layout circle in pixels.
+    """
+    cx = cy = size / 2.0
+    gap_list = list(gaps)
+    n = len(gap_list)
+
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}"'
+        f' xmlns="http://www.w3.org/2000/svg">',
+        f'  <rect width="{size}" height="{size}" fill="white"/>',
+    ]
+
+    if n == 0:
+        parts.append('</svg>')
+        return '\n'.join(parts)
+
+    # Sort by clockwise angle in SVG coordinates (y-down: atan2(dy,dx) increases CW)
+    gap_list.sort(key=lambda g: math.atan2(float(g.dir[1]), float(g.dir[0])))
+
+    # Uniform positions on the circle, starting at the top and going clockwise
+    thetas = [-math.pi / 2 + 2 * math.pi * i / n for i in range(n)]
+
+    sw = max(1.0, size * 0.005)
+    tick_half = radius * 0.08   # half-length of each radial tick mark
+    font_size = size * 0.045
+    arc_sw = sw * 1.8
+    color = COLOR_SENSOR_DEFAULT
+
+    # DartArrow marker (markerUnits defaults to strokeWidth)
+    parts.append(
+        '  <defs>'
+        '<marker style="overflow:visible" id="DartArrow"'
+        ' refX="0" refY="0" orient="auto-start-reverse"'
+        ' markerWidth="0.8" markerHeight="0.8"'
+        ' viewBox="0 0 1 1" preserveAspectRatio="xMidYMid">'
+        '<path style="fill:context-stroke;fill-rule:evenodd;stroke:none"'
+        ' d="M 0,0 5,-5 -12.5,0 5,5 Z" transform="scale(-0.5)"/>'
+        '</marker></defs>'
+    )
+
+    # Arc arrows between consecutive gaps (clockwise, sweep-flag=1).
+    # n=1: single gap gets a near-full-circle self-loop (large-arc=1).
+    if n >= 1:
+        pad_start = 0.05
+        pad_end = 0.15
+        for i in range(n):
+            t_start = thetas[i] + pad_start
+            next_theta = thetas[(i + 1) % n]
+            if next_theta <= thetas[i]:   # wrap from last gap back to first
+                next_theta += 2 * math.pi
+            t_end = next_theta - pad_end
+
+            sx = cx + radius * math.cos(t_start)
+            sy = cy + radius * math.sin(t_start)
+            ex = cx + radius * math.cos(t_end)
+            ey = cy + radius * math.sin(t_end)
+
+            span = t_end - t_start  # always positive by construction
+            large_arc = 1 if span > math.pi else 0
+            parts.append(
+                f'  <path d="M {sx:.3f},{sy:.3f}'
+                f' A {radius:.3f},{radius:.3f} 0 {large_arc},1 {ex:.3f},{ey:.3f}"'
+                f' fill="none" stroke="{color}" stroke-width="{arc_sw:.2f}"'
+                f' marker-end="url(#DartArrow)"/>'
+            )
+
+    # Gap tick marks (radial lines straddling the circle) and ID labels
+    label_r = radius + tick_half + font_size * 0.7
+    for i, gap in enumerate(gap_list):
+        t = thetas[i]
+        cos_t, sin_t = math.cos(t), math.sin(t)
+        x1 = cx + (radius - tick_half) * cos_t
+        y1 = cy + (radius - tick_half) * sin_t
+        x2 = cx + (radius + tick_half) * cos_t
+        y2 = cy + (radius + tick_half) * sin_t
+        # lx = cx + label_r * cos_t
+        # ly = cy + label_r * sin_t
+        parts.append(
+            f'  <line x1="{x1:.3f}" y1="{y1:.3f}" x2="{x2:.3f}" y2="{y2:.3f}"'
+            f' stroke="{color}" stroke-width="{arc_sw:.2f}"/>'
+        )
         # parts.append(
         #     f'  <text x="{lx:.3f}" y="{ly:.3f}" fill="{color}"'
         #     f' font-size="{font_size:.2f}" font-family="sans-serif"'

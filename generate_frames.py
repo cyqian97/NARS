@@ -4,14 +4,16 @@ Usage:
     python generate_frames.py [path/to/env.svg]
 
 For each of N_PATH_POINTS uniformly spaced points along the trajectory the
-script writes three files into three sibling output directories:
+script writes four files into four sibling output directories:
 
     <env>_frames/frame_NNNN.svg        shadow / hidden-area frames
     <env>_sensors_svg/frame_NNNN.svg   gap-sensor HUD frames (SVG)
     <env>_sensors_tex/frame_NNNN.tex   gap-sensor HUD frames (TikZ)
+    <env>_cyclic_svg/frame_NNNN.svg    cyclic-order diagrams (SVG)
 """
 
 import os
+import shutil
 import sys
 
 from tqdm import tqdm
@@ -25,13 +27,14 @@ from utils.svg_utils import (
     compute_shadow_polygons,
     generate_frame_svg,
     generate_sensor_svg,
+    generate_cyclic_svg,
 )
 from utils.tex_utils import generate_sensor_tex
 
 N_PATH_POINTS = 500
 
 
-def generate_frames(svg_path):
+def generate_frames(svg_path, show_frame_number=False):
     """Parse *svg_path* once, then write all three frame types per path point."""
     print(f"Parsing {svg_path} ...")
     svg_data = parse_svg_env_file(svg_path)
@@ -49,12 +52,15 @@ def generate_frames(svg_path):
 
     base = os.path.splitext(os.path.abspath(svg_path))[0]
     dirs = {
-        'shadow':     base + '_frames',
-        'sensor_svg': base + '_sensors_svg',
-        'sensor_tex': base + '_sensors_tex',
+        'shadow':      base + '_frames',
+        'sensor_svg':  base + '_sensors_svg',
+        'sensor_tex':  base + '_sensors_tex',
+        'cyclic_svg':  base + '_cyclic_svg',
     }
     for d in dirs.values():
-        os.makedirs(d, exist_ok=True)
+        if os.path.exists(d):
+            shutil.rmtree(d)
+        os.makedirs(d)
     print(f"Output dirs:\n" + "\n".join(f"  {d}" for d in dirs.values()))
 
     print("Generating frames ...")
@@ -72,7 +78,8 @@ def generate_frames(svg_path):
         name = f'frame_{i:04d}'
 
         with open(os.path.join(dirs['shadow'], name + '.svg'), 'w', encoding='utf-8') as f:
-            f.write(generate_frame_svg(svg_data, px, py, shadow_polys))
+            f.write(generate_frame_svg(svg_data, px, py, shadow_polys,
+                                       frame_number=i if show_frame_number else None))
 
         with open(os.path.join(dirs['sensor_svg'], name + '.svg'), 'w', encoding='utf-8') as f:
             f.write(generate_sensor_svg(gaps))
@@ -80,9 +87,17 @@ def generate_frames(svg_path):
         with open(os.path.join(dirs['sensor_tex'], name + '.tex'), 'w', encoding='utf-8') as f:
             f.write(generate_sensor_tex(gaps))
 
+        with open(os.path.join(dirs['cyclic_svg'], name + '.svg'), 'w', encoding='utf-8') as f:
+            f.write(generate_cyclic_svg(gaps))
+
     print(f"Done — {N_PATH_POINTS} frames written to each output directory.")
 
 
 if __name__ == '__main__':
-    svg_file = sys.argv[1] if len(sys.argv) > 1 else 'environments/env_0.svg'
-    generate_frames(svg_file)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('svg_file', nargs='?', default='environments/env_0.svg')
+    parser.add_argument('--frame-number', action='store_true',
+                        help='Overlay the frame index in the bottom-right corner of each SVG')
+    args = parser.parse_args()
+    generate_frames(args.svg_file, show_frame_number=args.frame_number)

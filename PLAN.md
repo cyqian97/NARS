@@ -1,3 +1,3 @@
-In generate_frames.py, you've already draw sensors using svg. Now I want you to also draw and output sensors using latex and the tikz package. For each sensor frame, write a latex file that I can compile with only that sensor figure. Make sure the figure you show looks exactly the same as the svg.
-
-Write a separate utils file, and dump the output in folder {env_name}_sensors_tex.
+For each frame, I want you to also generate the following plot in svg to show the cyclic order of the gaps, instead of exact angle. The plot would be similar to the sensor one, but different in a few ways.
+1. Gaps are shown uniformly on a circle
+2. Not like the sensor svg which has a big circle and the small dot, this time do not plot them, but rather use arc arrows between gaps to show the cyclic order. The arc arrow is a part of the big circle between two gaps, and point in the clockwise order.

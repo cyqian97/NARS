@@ -3,10 +3,6 @@
 import numbers
 import math
 
-# CCW = 1, CW = -1  (from pyvisgraph) — kept for future colour differentiation
-_CCW = 1
-_CW  = -1
-
 # Single sensor colour matching svg_utils.COLOR_SENSOR_DEFAULT (#1a5fb4)
 _SENSOR_RGB = (26, 95, 180)
 
@@ -67,11 +63,9 @@ def generate_sensor_tex(gaps, radius_cm: float = 3.5) -> str:
         if hasattr(gap, 'dir'):
             dx =  float(gap.dir[0])
             dy = -float(gap.dir[1])   # flip Y: SVG screen-space → TikZ math-space
-        elif isinstance(gap, numbers.Number):
-            dx = math.cos(gap)
-            dy = -math.sin(gap)
         else:
-            raise TypeError("Each gap must have a 'dir' attribute (2D vector) or be a scalar.")
+            dx = math.cos(float(gap)/180.0*math.pi)
+            dy = -math.sin(float(gap)/180.0*math.pi)
 
         x1 = radius_cm * dx
         y1 = radius_cm * dy
@@ -88,3 +82,17 @@ def generate_sensor_tex(gaps, radius_cm: float = 3.5) -> str:
         r'\end{document}',
     ]
     return '\n'.join(lines)
+
+if __name__ == "__main__":
+    # Example usage: python utils/tex_utils.py 0 30 60
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate a standalone LaTeX document with a TikZ sensor figure.")
+    parser.add_argument("gaps", nargs="+", help="Gap directions (degrees)")
+    parser.add_argument("--radius", type=float, default=3.5, help="Sensor ring radius in cm (default 3.5)")
+    parser.add_argument("--output", type=str, default="sensor.tex", help="Output file path")
+    args = parser.parse_args()
+    tex_code = generate_sensor_tex(args.gaps, radius_cm=args.radius)
+
+    with open(args.output, 'w', encoding='utf-8') as f:
+        f.write(tex_code)

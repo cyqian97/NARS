@@ -3,4 +3,5 @@ path.csv
 __pycache__/
 **frames/
 **sensors_svg/
+**sensors_tex/
 **.mp4

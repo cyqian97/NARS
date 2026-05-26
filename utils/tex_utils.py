@@ -71,7 +71,7 @@ def generate_sensor_tex(gaps, radius_cm: float = 3.5) -> str:
         y2 = (radius_cm - tick_cm) * dy
 
         lines.append(
-            f'  \\draw[sensorblue, line width={tick_lw_pt:.2f}pt, line cap=round]'
+            f'  \\draw[sensorblue, line width={tick_lw_pt:.2f}pt]'
             f' ({x1:.4f}cm,{y1:.4f}cm) -- ({x2:.4f}cm,{y2:.4f}cm);'
         )
 

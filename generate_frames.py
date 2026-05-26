@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from backend.environment import Environment
 from backend.robot import Robot
-from pyvisgraph.classes import Point
+from pyvisgraph.classes import Point, Edge
 from utils.svg_utils import (
     parse_svg_env_file,
     interpolate_path,
@@ -28,7 +28,7 @@ from utils.svg_utils import (
 )
 from utils.tex_utils import generate_sensor_tex
 
-N_PATH_POINTS = 1000
+N_PATH_POINTS = 500
 
 
 def generate_frames(svg_path):
@@ -58,14 +58,15 @@ def generate_frames(svg_path):
     print(f"Output dirs:\n" + "\n".join(f"  {d}" for d in dirs.values()))
 
     print("Generating frames ...")
+    robot = Robot(env, Point(*path_pts[0]))
     for i, (px, py) in enumerate(tqdm(path_pts)):
-        pos = Point(px, py)
+        if i > 0:
+            robot.move(Edge(Point(*path_pts[i - 1]), Point(px, py)))
+
+        gaps = robot.gaps
         try:
-            robot = Robot(env, pos)
-            gaps = robot.gaps
             shadow_polys = compute_shadow_polygons(robot.pos, gaps, polygon_graph)
         except Exception:
-            gaps = []
             shadow_polys = []
 
         name = f'frame_{i:04d}'

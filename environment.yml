@@ -1,11 +1,15 @@
 name: NARS
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - python=3.12
   - numpy
+  - cairo
   - pip
   - pip:
     - pygame==2.5.2
     - tqdm==4.66.2
+    - cairosvg
+    - opencv-python
     # pyvisgraph is included in the repository (local package), no install required

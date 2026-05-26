@@ -2,3 +2,5 @@ pyvisgraph/__pycache__/
 path.csv
 __pycache__/
 **frames/
+**sensors_svg/
+**.mp4

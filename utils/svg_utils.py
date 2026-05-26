@@ -434,3 +434,84 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys):
     return '\n'.join(
         header + shadow_poly_parts + env_parts + shadow_line_parts + robot_parts + ['</svg>']
     )
+
+
+# ---------------------------------------------------------------------------
+# Gap-sensor SVG
+# ---------------------------------------------------------------------------
+
+# CCW = 1, CW = -1  (from pyvisgraph)
+_CCW = 1
+_CW = -1
+_COLOR_CCW = "#ED2939"   # red
+_COLOR_CW  = "#1100BB"   # blue
+COLOR_SENSOR_DEFAULT = "#1a5fb4"
+
+
+def generate_sensor_svg(gaps, size: int = 500, radius: float = 200.0) -> str:
+    """Return an SVG string showing the circular gap-sensor HUD.
+
+    Mirrors the pygame ``draw_gap_sensor`` layout:
+      - Thin ring of *radius* centred in a *size* × *size* canvas.
+      - Filled dot at the centre.
+      - One tick mark per gap at its angular direction, coloured red (CCW)
+        or blue (CW), with the gap id as a label just outside the ring.
+
+    Parameters
+    ----------
+    gaps:
+        Iterable of Gap objects (need ``.dir``, ``.side``, ``.id``).
+    size:
+        Canvas width and height in pixels.
+    radius:
+        Radius of the sensor ring in pixels.
+    """
+    cx = cy = size / 2.0
+    tick_len    = radius * 0.2        # length of the tick mark beyond the ring
+    label_off   = radius * 0.18        # label centre distance from ring edge
+    dot_r       = size * 0.02          # centre-dot radius
+    stroke_w    = max(1.0, size * 0.006)
+    font_size   = size * 0.045
+
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}"'
+        f' xmlns="http://www.w3.org/2000/svg">',
+        f'  <rect width="{size}" height="{size}" fill="white"/>',
+        f'  <circle cx="{cx:.3f}" cy="{cy:.3f}" r="{radius:.3f}"'
+        f' fill="none" stroke="{COLOR_SENSOR_DEFAULT}" stroke-width="{stroke_w:.2f}"/>',
+        f'  <circle cx="{cx:.3f}" cy="{cy:.3f}" r="{dot_r:.3f}" fill="{COLOR_SENSOR_DEFAULT}"/>',
+    ]
+
+    for gap in gaps:
+        dx, dy = float(gap.dir[0]), float(gap.dir[1])
+
+        x1 = cx + radius * dx
+        y1 = cy + radius * dy
+        x2 = cx + (radius - tick_len) * dx
+        y2 = cy + (radius - tick_len) * dy
+        lx = cx + (radius - tick_len + label_off) * dx
+        ly = cy + (radius - tick_len + label_off) * dy
+
+        ## Currently not differentiating left or right gaps 
+        # if gap.side == _CCW:
+        #     color = _COLOR_CCW
+        # elif gap.side == _CW:
+        #     color = _COLOR_CW
+        # else:
+        #     color = COLOR_SENSOR_DEFAULT
+
+        parts.append(
+            f'  <line x1="{x1:.3f}" y1="{y1:.3f}" x2="{x2:.3f}" y2="{y2:.3f}"'
+            f' stroke="{COLOR_SENSOR_DEFAULT}" stroke-width="{stroke_w*2:.2f}"/>'
+        )
+        
+        ## Labeling is optional and is currently commented out.
+        # parts.append(
+        #     f'  <text x="{lx:.3f}" y="{ly:.3f}" fill="{color}"'
+        #     f' font-size="{font_size:.2f}" font-family="sans-serif"'
+        #     f' text-anchor="middle" dominant-baseline="middle">{gap.id}</text>'
+        # )
+
+    parts.append('</svg>')
+    return '\n'.join(parts)

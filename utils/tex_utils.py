@@ -1,5 +1,7 @@
 """LaTeX/TikZ utilities: generate standalone sensor-HUD figures."""
 
+import numbers
+import math
 
 # CCW = 1, CW = -1  (from pyvisgraph) — kept for future colour differentiation
 _CCW = 1
@@ -62,8 +64,14 @@ def generate_sensor_tex(gaps, radius_cm: float = 3.5) -> str:
     ]
 
     for gap in gaps:
-        dx =  float(gap.dir[0])
-        dy = -float(gap.dir[1])   # flip Y: SVG screen-space → TikZ math-space
+        if hasattr(gap, 'dir'):
+            dx =  float(gap.dir[0])
+            dy = -float(gap.dir[1])   # flip Y: SVG screen-space → TikZ math-space
+        elif isinstance(gap, numbers.Number):
+            dx = math.cos(gap)
+            dy = -math.sin(gap)
+        else:
+            raise TypeError("Each gap must have a 'dir' attribute (2D vector) or be a scalar.")
 
         x1 = radius_cm * dx
         y1 = radius_cm * dy

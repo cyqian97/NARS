@@ -1,6 +1,5 @@
-pyvisgraph/__pycache__/
 path.csv
-__pycache__/
+**__pycache__/
 **frames/
 **sensors_svg/
 **sensors_tex/

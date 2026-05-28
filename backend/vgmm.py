@@ -1,4 +1,4 @@
-"""Gap Navigation Tree (GNT) algorithm — Section IV of Tovar et al. 2007."""
+"""VGM Mapping algorithm use the event augmented coherence relation"""
 
 from backend.gap import GapEventType
 
@@ -9,7 +9,7 @@ PREV = object()  # insert/move toward the previous (older) side of history
 NEXT = object()  # insert/move toward the next (newer) side of history
 
 
-class GNT:
+class VGMM:
     """Maintains the Gap Navigation Tree as the robot moves.
 
     gap_lists      -- dict[gap_id -> DoublyLinkedList]: per-gap history list
@@ -25,7 +25,7 @@ class GNT:
             self._add_gap(gap.id)
 
     def __call__(self, event_info):
-        """Update the GNT for one topological event (A/D/S/M)."""
+        """Update the VGM map for one topological event (A/D/S/M)."""
         gap1_id = self.gap_id_map.get(event_info.gap1_id, event_info.gap1_id)
         gap2_id = self.gap_id_map.get(event_info.gap2_id, event_info.gap2_id)
 

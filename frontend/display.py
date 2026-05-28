@@ -86,13 +86,13 @@ def draw_gap_sensor(robot):
             text_pos = center + (radius + 16) * d - array([5, 5])
             if gap.side == vg.CCW:
                 pygame.draw.line(gameDisplay, red, start, end, 3)
-                draw_text(str(gap.id), red, 25, text_pos[0], text_pos[1])
+                # draw_text(str(gap.id), red, 25, text_pos[0], text_pos[1])
             elif gap.side == vg.CW:
                 pygame.draw.line(gameDisplay, blue, start, end, 3)
-                draw_text(str(gap.id), blue, 25, text_pos[0], text_pos[1])
+                # draw_text(str(gap.id), blue, 25, text_pos[0], text_pos[1])
             else:
                 pygame.draw.line(gameDisplay, black, start, end, 3)
-                draw_text(str(gap.id), black, 25, text_pos[0], text_pos[1])
+                # draw_text(str(gap.id), black, 25, text_pos[0], text_pos[1])
 
 
 def draw_text(mode_txt, color, size, x, y):

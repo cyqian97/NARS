@@ -7,11 +7,9 @@ from dataclasses import dataclass
 class Gap:
     __slots__ = ("id", "vertex", "side", "dir")
 
-    def __init__(self, id, vertex, side, dir):
-        assert isinstance(id, int)
+    def __init__(self, vertex, side, dir):
         assert isinstance(vertex, Point)
         assert abs(norm(dir) - 1) < 1e-10
-        self.id = id
         self.vertex = vertex
         self.side = side
         self.dir = dir
@@ -37,9 +35,3 @@ class GapEvent:
     edge: Edge    # the critical-event edge that was crossed
     etype: GapEventType
 
-
-@dataclass
-class EventInfo:
-    etype: GapEventType
-    gap1_id: int   # primary gap
-    gap2_id: int   # secondary gap (None for A/D)

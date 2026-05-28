@@ -477,7 +477,7 @@ def generate_sensor_svg(gaps, size: int = 500, radius: float = 200.0) -> str:
     Parameters
     ----------
     gaps:
-        Iterable of Gap objects (need ``.dir``, ``.side``, ``.id``).
+        Iterable of Gap objects (need ``.dir``, ``.side``).
     size:
         Canvas width and height in pixels.
     radius:
@@ -522,13 +522,6 @@ def generate_sensor_svg(gaps, size: int = 500, radius: float = 200.0) -> str:
             f'  <line x1="{x1:.3f}" y1="{y1:.3f}" x2="{x2:.3f}" y2="{y2:.3f}"'
             f' stroke="{COLOR_SENSOR_DEFAULT}" stroke-width="{stroke_w*2:.2f}"/>'
         )
-        
-        ## Labeling is optional and is currently commented out.
-        # parts.append(
-        #     f'  <text x="{lx:.3f}" y="{ly:.3f}" fill="{color}"'
-        #     f' font-size="{font_size:.2f}" font-family="sans-serif"'
-        #     f' text-anchor="middle" dominant-baseline="middle">{gap.id}</text>'
-        # )
 
     parts.append('</svg>')
     return '\n'.join(parts)
@@ -549,7 +542,7 @@ def generate_cyclic_svg(gaps, size: int = 500, radius: float = 200.0) -> str:
     Parameters
     ----------
     gaps:
-        Iterable of Gap objects (need ``.dir`` and ``.id``).
+        Iterable of Gap objects (need ``.dir``).
     size:
         Canvas width and height in pixels.
     radius:
@@ -635,11 +628,6 @@ def generate_cyclic_svg(gaps, size: int = 500, radius: float = 200.0) -> str:
             f'  <line x1="{x1:.3f}" y1="{y1:.3f}" x2="{x2:.3f}" y2="{y2:.3f}"'
             f' stroke="{color}" stroke-width="{arc_sw:.2f}"/>'
         )
-        # parts.append(
-        #     f'  <text x="{lx:.3f}" y="{ly:.3f}" fill="{color}"'
-        #     f' font-size="{font_size:.2f}" font-family="sans-serif"'
-        #     f' text-anchor="middle" dominant-baseline="middle">{gap.id}</text>'
-        # )
 
     parts.append('</svg>')
     return '\n'.join(parts)

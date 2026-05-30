@@ -1,3 +1,8 @@
-For each frame, I want you to also generate the following plot in svg to show the cyclic order of the gaps, instead of exact angle. The plot would be similar to the sensor one, but different in a few ways.
-1. Gaps are shown uniformly on a circle
-2. Not like the sensor svg which has a big circle and the small dot, this time do not plot them, but rather use arc arrows between gaps to show the cyclic order. The arc arrow is a part of the big circle between two gaps, and point in the clockwise order.
+I want to show a animation of the history of the gap directions.
+They will be plotted on a S^1\time [0,T] cyclinder, with S^1 being a circle shows the angles and [0,T] shows the time along the trajectories.
+At each moment in time, there might be multiple gaps, so there can be multiple points on the same slice of the cyclinder.
+
+The following file shows a example of such a plot on some pre-computed gap direction trajectories.
+C:\Users\selen\OneDrive - Texas A&M University\Project\NARS\figures\plot_cylinder_pyvista.py
+Learn from this example and generate png frame of this cyclinder.
+For now first ignore the cube and sphere markers

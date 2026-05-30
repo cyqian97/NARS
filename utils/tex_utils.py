@@ -89,6 +89,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Generate a standalone LaTeX document with a TikZ sensor figure.")
     parser.add_argument("gaps", nargs="+", help="Gap directions (degrees)")
+    # add html color parsing
     parser.add_argument("--radius", type=float, default=3.5, help="Sensor ring radius in cm (default 3.5)")
     parser.add_argument("--output", type=str, default="sensor.tex", help="Output file path")
     args = parser.parse_args()

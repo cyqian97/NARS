@@ -12,4 +12,5 @@ dependencies:
     - tqdm==4.66.2
     - cairosvg
     - opencv-python
+    - pyvista
     # pyvisgraph is included in the repository (local package), no install required

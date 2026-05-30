@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(conda run *)",
-      "Bash(grep -rn \"def delete\\\\|def remove\\\\|pass$\" /Users/wenjingchen/Library/CloudStorage/OneDrive-TexasA\\\\&MUniversity/Project/NARS/NARS/backend/)"
+      "Bash(grep -rn \"def delete\\\\|def remove\\\\|pass$\" /Users/wenjingchen/Library/CloudStorage/OneDrive-TexasA\\\\&MUniversity/Project/NARS/NARS/backend/)",
+      "Read(///wsl.localhost/Ubuntu//**)"
     ]
   }
 }

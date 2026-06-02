@@ -33,7 +33,8 @@ TOTAL_HEIGHT = 3.0
 ANGLE_OFFSET = 4.7    # global angular offset to rotate the S^1 view
 SHOW_SEAM_LINE = False   # toggle the black vertical seam line at theta=0
 SHOW_CAPS = False         # toggle top and bottom end caps of the cylinder
-CYLINDER_OPACITY = 0.3  # transparency of the cylinder shell (0=invisible, 1=opaque)
+CYLINDER_OPACITY_PAST   = 0.5  # opacity of the cylinder portion already traversed
+CYLINDER_OPACITY_FUTURE = 0.2  # opacity of the cylinder portion not yet traversed
 CURVE_LINE_WIDTH = 40   # tube width of the gap trajectory curves
 
 CURVE_COLORS = [
@@ -178,23 +179,33 @@ def run_simulation(svg_path):
 # Cylinder frame rendering
 # ---------------------------------------------------------------------------
 
-def _add_cylinder_shell(plotter):
-    cylinder = pv.Cylinder(
-        center=(0, 0, TOTAL_HEIGHT / 2),
-        direction=(0, 0, 1),
-        radius=CYLINDER_RADIUS,
-        height=TOTAL_HEIGHT,
-        resolution=200,
-        capping=SHOW_CAPS,
-    )
-    plotter.add_mesh(
-        cylinder,
-        opacity=CYLINDER_OPACITY,
-        color="gray",
-        smooth_shading=True,
-        show_edges=False,
-        lighting=True,
-    )
+def _add_cylinder_shell(plotter, max_step, total_steps):
+    split_z = max_step / total_steps * TOTAL_HEIGHT
+
+    if split_z > 0:
+        past = pv.Cylinder(
+            center=(0, 0, split_z / 2),
+            direction=(0, 0, 1),
+            radius=CYLINDER_RADIUS,
+            height=split_z,
+            resolution=200,
+            capping=SHOW_CAPS,
+        )
+        plotter.add_mesh(past, opacity=CYLINDER_OPACITY_PAST, color="gray",
+                         smooth_shading=True, show_edges=False, lighting=True)
+
+    if split_z < TOTAL_HEIGHT:
+        future_height = TOTAL_HEIGHT - split_z
+        future = pv.Cylinder(
+            center=(0, 0, split_z + future_height / 2),
+            direction=(0, 0, 1),
+            radius=CYLINDER_RADIUS,
+            height=future_height,
+            resolution=200,
+            capping=SHOW_CAPS,
+        )
+        plotter.add_mesh(future, opacity=CYLINDER_OPACITY_FUTURE, color="gray",
+                         smooth_shading=True, show_edges=False, lighting=True)
 
 
 def _add_grid_lines(plotter):
@@ -256,7 +267,7 @@ def render_frame(histories, max_step, total_steps, output_path,
     """Render one PNG frame of the cylinder up to max_step."""
     plotter = pv.Plotter(off_screen=True)
 
-    _add_cylinder_shell(plotter)
+    _add_cylinder_shell(plotter, max_step, total_steps)
     _add_grid_lines(plotter)
     _add_gap_curves(plotter, histories, max_step, total_steps)
 

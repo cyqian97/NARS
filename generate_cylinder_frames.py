@@ -28,9 +28,13 @@ N_PATH_POINTS = 500
 
 CYLINDER_RADIUS = 1.0
 CURVE_RADIUS = 1.01   # slightly outside cylinder surface for visibility
-TOTAL_HEIGHT = 1.0
+TOTAL_HEIGHT = 3.0
 
-ANGLE_OFFSET = 0.0    # global angular offset to rotate the S^1 view
+ANGLE_OFFSET = 4.7    # global angular offset to rotate the S^1 view
+SHOW_SEAM_LINE = False   # toggle the black vertical seam line at theta=0
+SHOW_CAPS = False         # toggle top and bottom end caps of the cylinder
+CYLINDER_OPACITY = 0.3  # transparency of the cylinder shell (0=invisible, 1=opaque)
+CURVE_LINE_WIDTH = 40   # tube width of the gap trajectory curves
 
 CURVE_COLORS = [
     "#0173B2",  # blue
@@ -47,7 +51,7 @@ CURVE_COLORS = [
 
 CAMERA_POSITION = [
     (3.84, -5.61, -0.7),
-    (0.0, 0.0, 0.5),
+    (0.0, 0.0, 1.5),
     (-0.78, -0.61, 0.15),
 ]
 
@@ -174,20 +178,18 @@ def run_simulation(svg_path):
 # Cylinder frame rendering
 # ---------------------------------------------------------------------------
 
-def _add_cylinder_shell(plotter, max_step, total_steps):
-    height = max_step / total_steps * TOTAL_HEIGHT
-    if height <= 0:
-        return
+def _add_cylinder_shell(plotter):
     cylinder = pv.Cylinder(
-        center=(0, 0, height / 2),
+        center=(0, 0, TOTAL_HEIGHT / 2),
         direction=(0, 0, 1),
         radius=CYLINDER_RADIUS,
-        height=height,
+        height=TOTAL_HEIGHT,
         resolution=200,
+        capping=SHOW_CAPS,
     )
     plotter.add_mesh(
         cylinder,
-        opacity=0.2,
+        opacity=CYLINDER_OPACITY,
         color="gray",
         smooth_shading=True,
         show_edges=False,
@@ -195,26 +197,23 @@ def _add_cylinder_shell(plotter, max_step, total_steps):
     )
 
 
-def _add_grid_lines(plotter, max_step, total_steps):
-    height = max_step / total_steps * TOTAL_HEIGHT
-    if height <= 0:
-        return
-
+def _add_grid_lines(plotter):
     n_vert = 12
     for theta in np.linspace(0, 2 * np.pi, n_vert, endpoint=False):
-        zv = np.linspace(0, height, 50)
+        is_seam = np.isclose(theta, 0.0)
+        if is_seam and not SHOW_SEAM_LINE:
+            continue
+        zv = np.linspace(0, TOTAL_HEIGHT, 50)
         pts = np.column_stack((np.cos(theta) * np.ones(50),
                                np.sin(theta) * np.ones(50), zv))
         line = pv.Spline(pts, 50)
-        color = "black" if np.isclose(theta, 0.0) else "white"
-        width = 10 if np.isclose(theta, 0.0) else 6
+        color = "black" if is_seam else "white"
+        width = 10 if is_seam else 6
         plotter.add_mesh(line, color=color, line_width=width,
                          smooth_shading=True, lighting=True)
 
     n_horiz = 8
     for z_val in np.linspace(0, TOTAL_HEIGHT, n_horiz):
-        if z_val > height:
-            continue
         theta_c = np.linspace(0, 2 * np.pi, 100)
         pts = np.column_stack((np.cos(theta_c), np.sin(theta_c),
                                 z_val * np.ones(100)))
@@ -231,10 +230,9 @@ def _add_gap_curves(plotter, histories, max_step, total_steps):
         if len(pts_this_frame) < 2:
             continue
 
-        angle_offset = ANGLE_OFFSET
         curve_pts = []
         for step, angle in pts_this_frame:
-            theta = angle + angle_offset
+            theta = angle + ANGLE_OFFSET
             z = step / total_steps * TOTAL_HEIGHT
             x = np.cos(theta) * CURVE_RADIUS
             y = np.sin(theta) * CURVE_RADIUS
@@ -246,7 +244,7 @@ def _add_gap_curves(plotter, histories, max_step, total_steps):
         plotter.add_mesh(
             spline,
             color=color,
-            line_width=20,
+            line_width=CURVE_LINE_WIDTH,
             render_lines_as_tubes=True,
             smooth_shading=True,
             lighting=True,
@@ -258,8 +256,8 @@ def render_frame(histories, max_step, total_steps, output_path,
     """Render one PNG frame of the cylinder up to max_step."""
     plotter = pv.Plotter(off_screen=True)
 
-    _add_cylinder_shell(plotter, max_step, total_steps)
-    _add_grid_lines(plotter, max_step, total_steps)
+    _add_cylinder_shell(plotter)
+    _add_grid_lines(plotter)
     _add_gap_curves(plotter, histories, max_step, total_steps)
 
     plotter.camera_position = CAMERA_POSITION
@@ -309,8 +307,8 @@ if __name__ == "__main__":
         description="Generate cylinder frames of gap direction history."
     )
     parser.add_argument("svg_file", nargs="?", default="environments/env_0.svg")
-    parser.add_argument("--stride", type=int, default=10,
-                        help="Render one frame every STRIDE steps (default 10)")
+    parser.add_argument("--stride", type=int, default=20,
+                        help="Render one frame every STRIDE steps (default 20)")
     parser.add_argument("--final-only", action="store_true",
                         help="Render only the final frame showing complete history")
     parser.add_argument("--window-size", default="3840x2160",

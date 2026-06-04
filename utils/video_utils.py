@@ -1,4 +1,4 @@
-"""Convert a folder of SVG frames to an MP4 video.
+"""Convert a folder of image frames to an MP4 video.
 
 Requirements (add to environment or install manually):
     pip install cairosvg opencv-python
@@ -99,30 +99,107 @@ def svg_folder_to_mp4(
     return output_path.resolve()
 
 
+def png_folder_to_mp4(
+    frames_dir: str | Path,
+    output_path: str | Path | None = None,
+    fps: float = 30.0,
+) -> Path:
+    """Write PNG frames in *frames_dir* to an MP4 video.
+
+    Parameters
+    ----------
+    frames_dir:
+        Directory containing ``*.png`` files sorted numerically by any
+        integer in the filename (``frame_0000.png``, ``frame_0001.png`` …).
+    output_path:
+        Destination ``.mp4`` path.  Defaults to ``<frames_dir>.mp4``
+        placed next to the frame directory.
+    fps:
+        Output frame rate.
+
+    Returns
+    -------
+    Path
+        Absolute path of the written MP4 file.
+    """
+    frames_dir = Path(frames_dir)
+    if not frames_dir.is_dir():
+        raise FileNotFoundError(f"Frame directory not found: {frames_dir}")
+
+    def _sort_key(p: Path) -> int:
+        m = re.search(r"\d+", p.stem)
+        return int(m.group()) if m else 0
+
+    png_files = sorted(frames_dir.glob("*.png"), key=_sort_key)
+    if not png_files:
+        raise ValueError(f"No PNG files found in {frames_dir}")
+
+    if output_path is None:
+        output_path = frames_dir.parent / (frames_dir.name + ".mp4")
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    writer: cv2.VideoWriter | None = None
+
+    for png_path in tqdm(png_files):
+        frame_bgr = cv2.imread(str(png_path))
+        if frame_bgr is None:
+            raise RuntimeError(f"Failed to read frame: {png_path.name}")
+
+        if writer is None:
+            h, w = frame_bgr.shape[:2]
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            writer = cv2.VideoWriter(str(output_path), fourcc, fps, (w, h))
+
+        writer.write(frame_bgr)
+
+    if writer is not None:
+        writer.release()
+    else:
+        raise RuntimeError("No frames were written.")
+
+    return output_path.resolve()
+
+
 def _cli() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Convert a folder of SVG frames to an MP4 video."
+        description="Convert a folder of image frames to an MP4 video."
     )
-    parser.add_argument("frames_dir", help="Directory containing SVG frames")
+    parser.add_argument("frames_dir", help="Directory containing image frames")
     parser.add_argument("-o", "--output", default=None, help="Output .mp4 path")
     parser.add_argument("--fps", type=float, default=30.0, help="Frames per second")
-    parser.add_argument("--dpi", type=float, default=96.0, help="Rasterisation DPI (default 96)")
-    parser.add_argument("--width", type=int, default=None, help="Output width in pixels")
-    parser.add_argument("--height", type=int, default=None, help="Output height in pixels")
-    parser.add_argument("--scale", type=float, default=1.0, help="Scale factor (default 1.0)")
+    parser.add_argument("--format", choices=["svg", "png"], default=None,
+                        help="Frame format (auto-detected from directory contents if omitted)")
+    parser.add_argument("--dpi", type=float, default=96.0, help="SVG rasterisation DPI (default 96)")
+    parser.add_argument("--width", type=int, default=None, help="SVG output width in pixels")
+    parser.add_argument("--height", type=int, default=None, help="SVG output height in pixels")
+    parser.add_argument("--scale", type=float, default=1.0, help="SVG scale factor (default 1.0)")
     args = parser.parse_args()
 
-    out = svg_folder_to_mp4(
-        args.frames_dir,
-        output_path=args.output,
-        fps=args.fps,
-        dpi=args.dpi,
-        width=args.width,
-        height=args.height,
-        scale=args.scale,
-    )
+    frames_dir = Path(args.frames_dir)
+    fmt = args.format
+    if fmt is None:
+        if any(frames_dir.glob("*.png")):
+            fmt = "png"
+        elif any(frames_dir.glob("*.svg")):
+            fmt = "svg"
+        else:
+            raise ValueError(f"No PNG or SVG files found in {frames_dir}")
+
+    if fmt == "png":
+        out = png_folder_to_mp4(frames_dir, output_path=args.output, fps=args.fps)
+    else:
+        out = svg_folder_to_mp4(
+            frames_dir,
+            output_path=args.output,
+            fps=args.fps,
+            dpi=args.dpi,
+            width=args.width,
+            height=args.height,
+            scale=args.scale,
+        )
     print(f"Written: {out}")
 
 

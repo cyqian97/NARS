@@ -12,6 +12,8 @@ accumulated up to that point in time.
 import argparse
 import os
 import shutil
+import time
+from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 import pyvista as pv
@@ -262,6 +264,11 @@ def _add_gap_curves(plotter, histories, max_step, total_steps):
         )
 
 
+def _render_frame_task(args):
+    histories, step, total_steps, out_path, window_size = args
+    render_frame(histories, step, total_steps, out_path, window_size)
+
+
 def render_frame(histories, max_step, total_steps, output_path,
                  window_size=WINDOW_SIZE):
     """Render one PNG frame of the cylinder up to max_step."""
@@ -284,7 +291,7 @@ def render_frame(histories, max_step, total_steps, output_path,
 # ---------------------------------------------------------------------------
 
 def generate_cylinder_frames(svg_path, stride=10, final_only=False,
-                              window_size=WINDOW_SIZE):
+                              window_size=WINDOW_SIZE, workers=None):
     histories, total_steps = run_simulation(svg_path)
 
     base = os.path.splitext(os.path.abspath(svg_path))[0]
@@ -305,12 +312,20 @@ def generate_cylinder_frames(svg_path, stride=10, final_only=False,
     if frame_steps[-1] != total_steps:
         frame_steps.append(total_steps)
 
-    print(f"Rendering {len(frame_steps)} frames (stride={stride}) ...")
-    for frame_idx, step in enumerate(tqdm(frame_steps)):
-        out_path = os.path.join(out_dir, f"frame_{frame_idx:04d}.png")
-        render_frame(histories, step, total_steps, out_path, window_size)
+    tasks = [
+        (histories, step, total_steps,
+         os.path.join(out_dir, f"frame_{i:04d}.png"), window_size)
+        for i, step in enumerate(frame_steps)
+    ]
 
-    print(f"Done — {len(frame_steps)} frames written to {out_dir}")
+    n_workers = workers or os.cpu_count()
+    print(f"Rendering {len(frame_steps)} frames (stride={stride}, workers={n_workers}) ...")
+    t0 = time.perf_counter()
+    with ProcessPoolExecutor(max_workers=n_workers) as executor:
+        list(tqdm(executor.map(_render_frame_task, tasks), total=len(tasks)))
+    elapsed = time.perf_counter() - t0
+
+    print(f"Done — {len(frame_steps)} frames written to {out_dir} in {elapsed:.1f}s")
 
 
 if __name__ == "__main__":
@@ -324,6 +339,8 @@ if __name__ == "__main__":
                         help="Render only the final frame showing complete history")
     parser.add_argument("--window-size", default="3840x2160",
                         help="Output resolution as WxH (default 3840x2160)")
+    parser.add_argument("--workers", type=int, default=None,
+                        help="Number of parallel render workers (default: all CPUs)")
     args = parser.parse_args()
 
     w, h = (int(v) for v in args.window_size.split("x"))
@@ -332,4 +349,5 @@ if __name__ == "__main__":
         stride=args.stride,
         final_only=args.final_only,
         window_size=(w, h),
+        workers=args.workers,
     )

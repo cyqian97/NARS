@@ -32,7 +32,8 @@ CYLINDER_RADIUS = 1.0
 CURVE_RADIUS = 1.01   # slightly outside cylinder surface for visibility
 TOTAL_HEIGHT = 3.0
 
-ANGLE_OFFSET = 4.7    # global angular offset to rotate the S^1 view
+ANGLE_OFFSET = -0.7    # global angular offset to rotate the S^1 view
+ANGLE_SMOOTHING_SIGMA = 15  # Gaussian kernel width (in steps) for smoothing rotation; 0 = off
 SHOW_SEAM_LINE = False   # toggle the black vertical seam line at theta=0
 SHOW_CAPS = False         # toggle top and bottom end caps of the cylinder
 CYLINDER_OPACITY_PAST   = 0.5  # opacity of the cylinder portion already traversed
@@ -210,18 +211,17 @@ def _add_cylinder_shell(plotter, max_step, total_steps):
                          smooth_shading=True, show_edges=False, lighting=True)
 
 
-def _add_grid_lines(plotter):
+def _add_grid_lines(plotter, angle_offset=ANGLE_OFFSET):
     n_vert = 12
-    for theta in np.linspace(0, 2 * np.pi, n_vert, endpoint=False):
-        is_seam = np.isclose(theta, 0.0)
-        if is_seam and not SHOW_SEAM_LINE:
-            continue
+    for base_theta in np.linspace(0, 2 * np.pi, n_vert, endpoint=False):
+        is_seam = np.isclose(base_theta, 0.0)
+        theta = base_theta + angle_offset
         zv = np.linspace(0, TOTAL_HEIGHT, 50)
         pts = np.column_stack((np.cos(theta) * np.ones(50),
                                np.sin(theta) * np.ones(50), zv))
         line = pv.Spline(pts, 50)
-        color = "black" if is_seam else "white"
-        width = 10 if is_seam else 6
+        color = "black" if (is_seam and SHOW_SEAM_LINE) else "white"
+        width = 10 if (is_seam and SHOW_SEAM_LINE) else 6
         plotter.add_mesh(line, color=color, line_width=width,
                          smooth_shading=True, lighting=True)
 
@@ -237,7 +237,7 @@ def _add_grid_lines(plotter):
                          smooth_shading=True, lighting=True)
 
 
-def _add_gap_curves(plotter, histories, max_step, total_steps):
+def _add_gap_curves(plotter, histories, max_step, total_steps, angle_offset=ANGLE_OFFSET):
     for gap_id, raw_history in sorted(histories.items()):
         pts_this_frame = [(s, a) for s, a in raw_history if s <= max_step]
         if len(pts_this_frame) < 2:
@@ -245,7 +245,7 @@ def _add_gap_curves(plotter, histories, max_step, total_steps):
 
         curve_pts = []
         for step, angle in pts_this_frame:
-            theta = angle + ANGLE_OFFSET
+            theta = angle + angle_offset
             z = step / total_steps * TOTAL_HEIGHT
             x = np.cos(theta) * CURVE_RADIUS
             y = np.sin(theta) * CURVE_RADIUS
@@ -264,19 +264,52 @@ def _add_gap_curves(plotter, histories, max_step, total_steps):
         )
 
 
+def _compute_angle_offsets(histories):
+    """Compute per-step angle offsets so the active-gap frontier stays at the front.
+
+    For each step s the raw offset is  -mu(s) + ANGLE_OFFSET, where mu(s) is
+    the circular mean of all active gap angles.  The series is then unwrapped
+    and smoothed with a Gaussian kernel (width ANGLE_SMOOTHING_SIGMA) so that
+    gap appearances/disappearances do not cause sudden rotation jumps.
+
+    Returns a dict {step: angle_offset}.
+    """
+    from scipy.ndimage import gaussian_filter1d
+
+    step_angles: dict[int, list[float]] = {}
+    for records in histories.values():
+        for step, angle in records:
+            step_angles.setdefault(step, []).append(angle)
+
+    steps = sorted(step_angles.keys())
+    raw = np.empty(len(steps))
+    for i, step in enumerate(steps):
+        z = np.mean(np.exp(1j * np.array(step_angles[step])))
+        raw[i] = -float(np.angle(z)) + ANGLE_OFFSET
+
+    # Unwrap so ±π boundaries don't create artificial discontinuities,
+    # then smooth to remove jumps caused by gaps appearing/disappearing.
+    smoothed = np.unwrap(raw)
+    if ANGLE_SMOOTHING_SIGMA > 0:
+        smoothed = gaussian_filter1d(smoothed, sigma=ANGLE_SMOOTHING_SIGMA)
+
+    return {step: float(smoothed[i]) for i, step in enumerate(steps)}
+
+
 def _render_frame_task(args):
-    histories, step, total_steps, out_path, window_size = args
-    render_frame(histories, step, total_steps, out_path, window_size)
+    histories, step, total_steps, out_path, window_size, angle_offsets = args
+    angle_offset = angle_offsets.get(step, ANGLE_OFFSET)
+    render_frame(histories, step, total_steps, out_path, window_size, angle_offset)
 
 
 def render_frame(histories, max_step, total_steps, output_path,
-                 window_size=WINDOW_SIZE):
+                 window_size=WINDOW_SIZE, angle_offset=ANGLE_OFFSET):
     """Render one PNG frame of the cylinder up to max_step."""
     plotter = pv.Plotter(off_screen=True)
 
     _add_cylinder_shell(plotter, max_step, total_steps)
-    _add_grid_lines(plotter)
-    _add_gap_curves(plotter, histories, max_step, total_steps)
+    _add_grid_lines(plotter, angle_offset)
+    _add_gap_curves(plotter, histories, max_step, total_steps, angle_offset)
 
     plotter.camera_position = CAMERA_POSITION
     plotter.set_background("white")
@@ -301,10 +334,15 @@ def generate_cylinder_frames(svg_path, stride=10, final_only=False,
     os.makedirs(out_dir)
     print(f"Output directory: {out_dir}")
 
+    print("Computing per-frame angle offsets ...")
+    angle_offsets = _compute_angle_offsets(histories)
+
     if final_only:
         out_path = os.path.join(out_dir, "frame_final.png")
         print("Rendering final frame ...")
-        render_frame(histories, total_steps, total_steps, out_path, window_size)
+        angle_offset = angle_offsets.get(total_steps, ANGLE_OFFSET)
+        render_frame(histories, total_steps, total_steps, out_path, window_size,
+                     angle_offset)
         print(f"Saved: {out_path}")
         return
 
@@ -314,7 +352,7 @@ def generate_cylinder_frames(svg_path, stride=10, final_only=False,
 
     tasks = [
         (histories, step, total_steps,
-         os.path.join(out_dir, f"frame_{i:04d}.png"), window_size)
+         os.path.join(out_dir, f"frame_{i:04d}.png"), window_size, angle_offsets)
         for i, step in enumerate(frame_steps)
     ]
 

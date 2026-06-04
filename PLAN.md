@@ -1,1 +1,2 @@
-I want to cylinder to be split into two: one contains the trajectory up to now, and the other is the cylinder in which the curves will enter in the future. I want the first cylinder to be darker than then second.
+I want the cylinder itself (the entire coordinate frame) to rotation as the curves grows to keep the frontier of the curves in the front side of the cylinder.
+This could be realized by a changing offest that applies both to the curves and to the vertical white lines.

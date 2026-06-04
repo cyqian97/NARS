@@ -13,4 +13,5 @@ dependencies:
     - cairosvg
     - opencv-python
     - pyvista
+    - scipy
     # pyvisgraph is included in the repository (local package), no install required

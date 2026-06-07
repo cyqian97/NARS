@@ -77,7 +77,7 @@ class Point(object):
 
 
 class Edge(object):
-    __slots__ = ("p1", "p2", "side","dual")
+    __slots__ = ("p1", "p2", "side", "dual", "eid")
     """Edge class
 
     Attributes:
@@ -92,6 +92,7 @@ class Edge(object):
         self.p2 = point2
         self.side = side
         self.dual = None
+        self.eid = None
 
     def get_adjacent(self, point):
         if point == self.p1:

@@ -7,7 +7,7 @@ from math import sqrt
 import xml.etree.ElementTree as ET
 
 import pyvisgraph as vg
-from pyvisgraph.visible_vertices import intersect_point, edge_distance
+from pyvisgraph.visible_vertices import intersect_point, edge_distance, on_segment
 
 SVG_NS = 'http://www.w3.org/2000/svg'
 INKSCAPE_NS = 'http://www.inkscape.org/namespaces/inkscape'
@@ -273,11 +273,9 @@ def _shadow_endpoint(robot_pos, gap_vertex, graph):
         p = intersect_point(gap_vertex, far, edge)
         if p is None:
             continue
-        if not (min(edge.p1.x, edge.p2.x) - 1e-6 <= p.x <= max(edge.p1.x, edge.p2.x) + 1e-6):
+        if not on_segment(edge.p1, p, edge.p2): # verify p is on edge
             continue
-        if not (min(edge.p1.y, edge.p2.y) - 1e-6 <= p.y <= max(edge.p1.y, edge.p2.y) + 1e-6):
-            continue
-        if (p.x - gap_vertex.x) * dx + (p.y - gap_vertex.y) * dy <= 0:
+        if (p.x - gap_vertex.x) * dx + (p.y - gap_vertex.y) * dy <= 0: # verify p is in the ray direction from gap_vertex
             continue
         d = edge_distance(gap_vertex, p)
         if d < min_dist:
@@ -365,15 +363,18 @@ def _xml_escape(s):
              .replace('"', '&quot;'))
 
 
-def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=None):
+def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=None,
+                       show_event_lines=False, env=None):
     """Return an SVG string for one animation frame.
 
-    svg_data     -- dict from parse_svg_env_file()
-    robot_x/y   -- robot position in SVG coordinate space
-    shadow_polys -- list of dicts with keys poly, gap_vertex, shadow_pt
-    frame_number -- if not None, renders the frame number in the bottom-right corner
+    svg_data          -- dict from parse_svg_env_file()
+    robot_x/y         -- robot position in SVG coordinate space
+    shadow_polys      -- list of dicts with keys poly, gap_vertex, shadow_pt
+    frame_number      -- if not None, renders the frame number in the bottom-right corner
+    show_event_lines  -- if True, draw bitangent_comp / extension / inflection edges
+    env               -- Environment instance; required when show_event_lines is True
 
-    Draw order (bottom → top): shadow polygons, env, shadow lines, robot, frame label.
+    Draw order (bottom → top): event lines, shadow polygons, env, shadow lines, robot, frame label.
     """
     width = svg_data['svg_width']
     height = svg_data['svg_height']
@@ -441,14 +442,34 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=No
             f' fill="#333333" opacity="0.7">{frame_number}</text>'
         )
 
-    # Assemble in draw order: shadow polygons → env → shadow lines → robot → frame label
+    # --- event lines ---
+    event_line_parts = []
+    if show_event_lines and env is not None:
+        m = re.search(r'stroke-width\s*:\s*([\d.]+)', svg_data.get('near_style', ''))
+        sw = float(m.group(1)) if m else 0.3
+
+        def _edge_lines(edges, color1, color2, stroke_width=None):
+            w = stroke_width if stroke_width is not None else sw
+            for edge in edges:
+                color = color1 if edge.side >= 0 else color2
+                event_line_parts.append(
+                    f'  <line id="{edge.eid}" x1="{edge.p1.x:.4f}" y1="{edge.p1.y:.4f}"'
+                    f' x2="{edge.p2.x:.4f}" y2="{edge.p2.y:.4f}"'
+                    f' stroke="{color}" stroke-width="{w}" opacity="0.8"/>'
+                )
+
+        _edge_lines(env.bitangent_comp.get_edges(), '#0072BD', '#D95319')
+        _edge_lines(env.extension.get_edges(),      '#D2E6FF', '#FFDCDC', sw / 4)
+        _edge_lines(env.inflection.get_edges(),     '#EDB120', '#7E2F8E')
+
+    # Assemble in draw order: event lines → shadow polygons → env → shadow lines → robot → frame label
     header = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg width="{width}" height="{height}" viewBox="{viewbox}"',
         f'     xmlns="http://www.w3.org/2000/svg">',
     ]
     return '\n'.join(
-        header + shadow_poly_parts + env_parts + shadow_line_parts
+        header + event_line_parts + shadow_poly_parts + env_parts + shadow_line_parts
         + robot_parts + frame_label_parts + ['</svg>']
     )
 
@@ -480,31 +501,49 @@ def generate_event_lines_svg(svg_data, env) -> str:
     m = re.search(r'stroke-width\s*:\s*([\d.]+)', svg_data.get('near_style', ''))
     sw = float(m.group(1)) if m else 0.3
 
-    def _edge_lines(edges, color1, color2):
-        parts = []
+    def _layer(layer_id, edges, color1, color2, stroke_width=None, split=False):
+        w = stroke_width if stroke_width is not None else sw
+        if split:
+            pos = [e for e in edges if e.side >= 0]
+            neg = [e for e in edges if e.side < 0]
+            def _lines(subset, color):
+                return [
+                    f'    <line id="{e.eid}" x1="{e.p1.x:.4f}" y1="{e.p1.y:.4f}"'
+                    f' x2="{e.p2.x:.4f}" y2="{e.p2.y:.4f}"'
+                    f' stroke="{color}" stroke-width="{w}" opacity="0.8"/>'
+                    for e in subset
+                ]
+            return (
+                [f'  <g id="{layer_id}_pos">'] + _lines(pos, color1) + ['  </g>']
+                + [f'  <g id="{layer_id}_neg">'] + _lines(neg, color2) + ['  </g>']
+            )
+        inner = []
         for edge in edges:
             color = color1 if edge.side >= 0 else color2
-            parts.append(
-                f'  <line x1="{edge.p1.x:.4f}" y1="{edge.p1.y:.4f}"'
+            inner.append(
+                f'    <line id="{edge.eid}" x1="{edge.p1.x:.4f}" y1="{edge.p1.y:.4f}"'
                 f' x2="{edge.p2.x:.4f}" y2="{edge.p2.y:.4f}"'
-                f' stroke="{color}" stroke-width="{sw}" opacity="0.8"/>'
+                f' stroke="{color}" stroke-width="{w}" opacity="0.8"/>'
             )
-        return parts
-
-    lines = (
-        _edge_lines(env.bitangent_comp.get_edges(), '#0072BD', '#D95319')
-        + _edge_lines(env.extension.get_edges(),    '#D2E6FF', '#FFDCDC')
-        + _edge_lines(env.inflection.get_edges(),   '#EDB120', '#7E2F8E')
-    )
-
-    env_part = [f'  <path id="env" d="{env_d}" style="{env_style}" transform="{env_transform}"/>']
+        return [f'  <g id="{layer_id}">'] + inner + ['  </g>']
 
     header = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg width="{width}" height="{height}" viewBox="{viewbox}"',
         f'     xmlns="http://www.w3.org/2000/svg">',
     ]
-    return '\n'.join(header + lines + env_part + ['</svg>'])
+    layers = (
+        _layer('bitangent_comp', env.bitangent_comp.get_edges(), '#0072BD', '#D95319')
+        + _layer('extension',    env.extension.get_edges(),      '#D2E6FF', '#FFDCDC',
+                 stroke_width=sw / 4, split=True)
+        + _layer('inflection',   env.inflection.get_edges(),     '#EDB120', '#7E2F8E')
+    )
+    dot_r = sw * 0.5
+    env_part = ['  <g id="env_vertices">'] + [
+        f'    <circle cx="{x:.4f}" cy="{y:.4f}" r="{dot_r:.4f}" fill="#333333"/>'
+        for x, y in svg_data['env_polygon_points']
+    ] + ['  </g>']
+    return '\n'.join(header + layers + env_part + ['</svg>'])
 
 
 # ---------------------------------------------------------------------------

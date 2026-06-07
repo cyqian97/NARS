@@ -26,9 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="6.2112988"
-     inkscape:cx="121.15019"
-     inkscape:cy="59.488363"
+     inkscape:zoom="4.3920515"
+     inkscape:cx="124.31548"
+     inkscape:cy="104.8485"
      inkscape:window-width="1920"
      inkscape:window-height="1051"
      inkscape:window-x="-9"
@@ -45,8 +45,8 @@
      inkscape:label="env"
      sodipodi:nodetypes="cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" />
   <path
-     style="fill:none;stroke:#1a5fb4;stroke-width:0.271679;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
-     d="m 10.137729,20.800112 1.312302,-1.586775 1.722948,-1.653687 2.507494,-1.934143 3.347159,-1.994751 2.005678,-0.951488 2.236137,-0.884122 2.473637,-0.789431 2.717867,-0.667205 2.969145,-0.517509 3.227155,-0.3403285 3.246396,-0.1161481 3.023607,0.1160554 2.802604,0.317233 2.583473,0.4874262 2.366128,0.626578 2.150656,0.734804 3.662447,1.670129 2.822813,1.730735 1.997974,1.543302 1.580594,1.532269"
+     style="fill:none;stroke:#1a5fb4;stroke-width:0.278335;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+     d="m 8.4296047,19.262237 1.3532456,-1.607234 1.7833727,-1.680804 2.602772,-1.973891 3.483456,-2.048159 2.091135,-0.983636 2.334158,-0.920071 2.584995,-0.8293097 2.84333,-0.7111405 3.109487,-0.565633 3.383143,-0.392767 3.406827,-0.1690344 3.176508,0.066665 2.947585,0.2713272 2.720147,0.4449932 2.494099,0.5876071 2.269541,0.6992833 3.871403,1.6093898 2.99075,1.683655 2.121782,1.50979 1.683373,1.505571"
      id="path"
      sodipodi:nodetypes="czc"
      inkscape:label="path" />
@@ -68,7 +68,7 @@
   <g
      id="robot"
      style="display:inline;stroke-width:0.4;stroke-dasharray:none"
-     transform="translate(20.729051,9.3269923)"
+     transform="matrix(0.64,0,0,0.64,17.326305,4.1666459)"
      inkscape:label="robot">
     <circle
        style="display:inline;fill:#c3dbfa;fill-opacity:1;stroke:#1a5fb4;stroke-width:0.4;stroke-dasharray:none"

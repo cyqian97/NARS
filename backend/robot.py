@@ -24,6 +24,7 @@ class Robot:
         """Process all gap events along path_edge and advance position."""
         events = self.env.gap_events_along(path_edge)
         for event in events:
+            print(f"{event.etype.name}  edge={event.edge.eid}  pos={event.pos}")
             event_info = self._apply_event(event)
             self.pos = event.pos
             self._update_directions()

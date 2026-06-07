@@ -504,7 +504,7 @@ def intersect_point(p1, p2, edge):
 
 def edge_cross_point(edge1, edge2):
     p = intersect_point(edge1.p1, edge1.p2, edge2)
-    if p and on_segment(edge1.p1, p, edge1.p2) and on_segment(edge2.p1, p, edge2.p2):
+    if p and on_segment(edge1.p1, p, edge1.p2, check_collinear=False) and on_segment(edge2.p1, p, edge2.p2, check_collinear=False):
         return p
     else:
         return None
@@ -577,13 +577,14 @@ def ccw(A, B, C):
         return 0
 
 
-def on_segment(p, q, r):
+def on_segment(p, q, r, check_collinear=True):
     """Checks if point q lies on line segment 'pr'.
     Tight rules are applied to ensure that a gap event is only count once.
     However, for horizontal and vertical path edge,
     tight rule results in false negative,
-    therefore these cases are treated separately."""
-    if not ccw(p, q, r) == 0:
+    therefore these cases are treated separately
+    in p.x == r.x and p.y == r.y cases."""
+    if check_collinear and not ccw(p, q, r) == 0:
         return False
     if p.x == r.x:
         return (q.y <= max(p.y, r.y) + T_on_segment) and (

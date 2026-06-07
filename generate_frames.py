@@ -77,7 +77,8 @@ def generate_frames(svg_path, show_frame_number=False, show_event_lines=False):
 
     print("Generating frames ...")
     robot = Robot(env, Point(*path_pts[0]))
-    for i, (px, py) in enumerate(tqdm(path_pts)):
+    for i, (px, py) in enumerate(path_pts): #enumerate(tqdm(path_pts))
+        print(f"Frame {i:04d} / {N_PATH_POINTS}  pos=({px:.4f}, {py:.4f})")
         if i > 0:
             robot.move(Edge(Point(*path_pts[i - 1]), Point(px, py)))
 
@@ -91,7 +92,8 @@ def generate_frames(svg_path, show_frame_number=False, show_event_lines=False):
 
         with open(os.path.join(dirs['shadow'], name + '.svg'), 'w', encoding='utf-8') as f:
             f.write(generate_frame_svg(svg_data, px, py, shadow_polys,
-                                       frame_number=i if show_frame_number else None))
+                                       frame_number=i if show_frame_number else None,
+                                       show_event_lines=show_event_lines, env=env))
 
         with open(os.path.join(dirs['sensor_svg'], name + '.svg'), 'w', encoding='utf-8') as f:
             f.write(generate_sensor_svg(gaps))

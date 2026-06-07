@@ -39,6 +39,12 @@ class Environment:
         """
         self._vis_graph.build(polygons, status=status)
         self._built = True
+        for i, edge in enumerate(self._vis_graph.bitangent_comp.get_edges()):
+            edge.eid = f"BC_{i}"
+        for i, edge in enumerate(self._vis_graph.extension.get_edges()):
+            edge.eid = f"EX_{i}"
+        for i, edge in enumerate(self._vis_graph.inflection.get_edges()):
+            edge.eid = f"INF_{i}"
 
     def save(self, path):
         """Save polygon list to a JSON file."""

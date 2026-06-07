@@ -10,6 +10,10 @@ script writes four files into four sibling output directories:
     <env>_sensors_svg/frame_NNNN.svg   gap-sensor HUD frames (SVG)
     <env>_sensors_tex/frame_NNNN.tex   gap-sensor HUD frames (TikZ)
     <env>_cyclic_svg/frame_NNNN.svg    cyclic-order diagrams (SVG)
+
+With --event-lines, one additional file is written:
+
+    <env>_event_lines.svg              all critical-event edges (static, one frame)
 """
 
 import os
@@ -26,6 +30,7 @@ from utils.svg_utils import (
     interpolate_path,
     compute_shadow_polygons,
     generate_frame_svg,
+    generate_event_lines_svg,
     generate_sensor_svg,
     generate_cyclic_svg,
 )
@@ -34,7 +39,7 @@ from utils.tex_utils import generate_sensor_tex
 N_PATH_POINTS = 500
 
 
-def generate_frames(svg_path, show_frame_number=False):
+def generate_frames(svg_path, show_frame_number=False, show_event_lines=False):
     """Parse *svg_path* once, then write all three frame types per path point."""
     print(f"Parsing {svg_path} ...")
     svg_data = parse_svg_env_file(svg_path)
@@ -49,6 +54,7 @@ def generate_frames(svg_path, show_frame_number=False):
 
     print(f"Interpolating {N_PATH_POINTS} points along path ...")
     path_pts = interpolate_path(svg_data['path_points'], N_PATH_POINTS)
+    
 
     base = os.path.splitext(os.path.abspath(svg_path))[0]
     dirs = {
@@ -62,6 +68,12 @@ def generate_frames(svg_path, show_frame_number=False):
             shutil.rmtree(d)
         os.makedirs(d)
     print(f"Output dirs:\n" + "\n".join(f"  {d}" for d in dirs.values()))
+
+    if show_event_lines:
+        el_path = base + '_event_lines.svg'
+        with open(el_path, 'w', encoding='utf-8') as f:
+            f.write(generate_event_lines_svg(svg_data, env))
+        print(f"Event lines SVG: {el_path}")
 
     print("Generating frames ...")
     robot = Robot(env, Point(*path_pts[0]))
@@ -96,8 +108,11 @@ def generate_frames(svg_path, show_frame_number=False):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('svg_file', nargs='?', default='environments/env_0.svg')
+    parser.add_argument('svg_file', nargs='?', default='environments/env_1.svg')
     parser.add_argument('--frame-number', action='store_true',
                         help='Overlay the frame index in the bottom-right corner of each SVG')
+    parser.add_argument('--event-lines', action='store_true',
+                        help='Write a single <env>_event_lines.svg with all critical-event edges')
     args = parser.parse_args()
-    generate_frames(args.svg_file, show_frame_number=args.frame_number)
+    generate_frames(args.svg_file, show_frame_number=args.frame_number,
+                    show_event_lines=args.event_lines)

@@ -373,7 +373,7 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=No
     shadow_polys -- list of dicts with keys poly, gap_vertex, shadow_pt
     frame_number -- if not None, renders the frame number in the bottom-right corner
 
-    Draw order (bottom → top): robot, shadow lines, env, shadow polygons.
+    Draw order (bottom → top): shadow polygons, env, shadow lines, robot, frame label.
     """
     width = svg_data['svg_width']
     height = svg_data['svg_height']
@@ -448,9 +448,63 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=No
         f'     xmlns="http://www.w3.org/2000/svg">',
     ]
     return '\n'.join(
-        header + shadow_poly_parts + env_parts + shadow_line_parts + robot_parts
-        + frame_label_parts + ['</svg>']
+        header + shadow_poly_parts + env_parts + shadow_line_parts
+        + robot_parts + frame_label_parts + ['</svg>']
     )
+
+
+# ---------------------------------------------------------------------------
+# Event-lines SVG (static, one file per environment)
+# ---------------------------------------------------------------------------
+
+def generate_event_lines_svg(svg_data, env) -> str:
+    """Return a standalone SVG showing all critical-event edges for the environment.
+
+    Draws the env boundary plus bitangent_comp / extension / inflection edges,
+    using the same coordinate space and stroke-width as the frame SVGs.
+    Since these edges are static, only one file is needed per environment.
+
+    Edge colours mirror the pygame show_static_visgraph display:
+      - bitangent_comp  (S/M): blue (#0072BD) side=+1 / orange (#D95319) side=-1
+      - extension       (N/P): light-blue (#D2E6FF) side=+1 / light-red (#FFDCDC) side=-1
+      - inflection      (A/D): yellow (#EDB120) side=+1 / purple (#7E2F8E) side=-1
+    """
+    width = svg_data['svg_width']
+    height = svg_data['svg_height']
+    viewbox = svg_data['svg_viewbox']
+    env_d = _xml_escape(svg_data['env_path_d'])
+    env_style = _xml_escape(svg_data['env_path_style'])
+    env_transform = _xml_escape(svg_data['env_path_transform'])
+
+    # Match stroke-width to the near/far gap lines from the SVG template.
+    m = re.search(r'stroke-width\s*:\s*([\d.]+)', svg_data.get('near_style', ''))
+    sw = float(m.group(1)) if m else 0.3
+
+    def _edge_lines(edges, color1, color2):
+        parts = []
+        for edge in edges:
+            color = color1 if edge.side >= 0 else color2
+            parts.append(
+                f'  <line x1="{edge.p1.x:.4f}" y1="{edge.p1.y:.4f}"'
+                f' x2="{edge.p2.x:.4f}" y2="{edge.p2.y:.4f}"'
+                f' stroke="{color}" stroke-width="{sw}" opacity="0.8"/>'
+            )
+        return parts
+
+    lines = (
+        _edge_lines(env.bitangent_comp.get_edges(), '#0072BD', '#D95319')
+        + _edge_lines(env.extension.get_edges(),    '#D2E6FF', '#FFDCDC')
+        + _edge_lines(env.inflection.get_edges(),   '#EDB120', '#7E2F8E')
+    )
+
+    env_part = [f'  <path id="env" d="{env_d}" style="{env_style}" transform="{env_transform}"/>']
+
+    header = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        f'<svg width="{width}" height="{height}" viewBox="{viewbox}"',
+        f'     xmlns="http://www.w3.org/2000/svg">',
+    ]
+    return '\n'.join(header + lines + env_part + ['</svg>'])
 
 
 # ---------------------------------------------------------------------------

@@ -128,6 +128,8 @@ def bitangent_lines(point, graph, scan="full"):
                     sides.append(ccw(point, p, _edge.get_adjacent(p)))
                 if sides[0] != sides[1]:
                     is_visible = False
+                else:
+                    pass
             elif len(_edges) == 0:
                 is_visible = True
                 point_count += 1

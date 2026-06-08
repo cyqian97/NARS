@@ -1,2 +1,0 @@
-I want the cylinder itself (the entire coordinate frame) to rotation as the curves grows to keep the frontier of the curves in the front side of the cylinder.
-This could be realized by a changing offest that applies both to the curves and to the vertical white lines.

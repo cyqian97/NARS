@@ -5,7 +5,8 @@
       "Bash(grep -rn \"def delete\\\\|def remove\\\\|pass$\" /Users/wenjingchen/Library/CloudStorage/OneDrive-TexasA\\\\&MUniversity/Project/NARS/NARS/backend/)",
       "Read(///wsl.localhost/Ubuntu//**)",
       "Bash(python debug_shadow.py)",
-      "PowerShell(wsl -d Ubuntu -e bash -c \"/root/miniconda3/envs/NARS/bin/python /root/NARS/debug_shadow.py\")"
+      "PowerShell(wsl -d Ubuntu -e bash -c \"/root/miniconda3/envs/NARS/bin/python /root/NARS/debug_shadow.py\")",
+      "PowerShell(wsl -d Ubuntu --exec git -C /root/NARS log --oneline -30)"
     ]
   }
 }

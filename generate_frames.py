@@ -53,7 +53,7 @@ VIEW_ELEV = 31.4
 
 
 def generate_frames(svg_path, show_frame_number=False, show_event_lines=False,
-                    generate_vgm=False, n_arrows=2000, n_fine=5000, angle_tol=0.15):
+                    generate_vgm=False, n_arrows=2000, n_fine=5000, dist_tol=3.0):
     """Parse *svg_path* once, then write all frame types per path point."""
     print(f"Parsing {svg_path} ...")
     svg_data = parse_svg_env_file(svg_path)
@@ -149,7 +149,7 @@ def generate_frames(svg_path, show_frame_number=False, show_event_lines=False,
             vd = vgm_lift_data
             matches = map_gaps_to_smooth_curve(
                 gaps, vd['sx'], vd['sy'], vd['theta_fwd'], vd['theta_opp'],
-                vd['svg_h'], angle_tol,
+                vd['svg_h'], dist_tol,
             )
             fig = plt.figure(figsize=(9, 7))
             ax = fig.add_subplot(111, projection='3d')
@@ -168,7 +168,6 @@ def generate_frames(svg_path, show_frame_number=False, show_event_lines=False,
             ax.set_xticklabels([])
             ax.set_yticklabels([])
             ax.view_init(elev=VIEW_ELEV, azim=VIEW_AZIM)
-            plt.tight_layout()
             plt.savefig(os.path.join(dirs['vgm_lift'], name + '.png'), dpi=120, bbox_inches='tight')
             plt.close(fig)
 
@@ -187,11 +186,11 @@ if __name__ == '__main__':
                         help='Also generate VGM lift frames (requires a "curve" path in the SVG)')
     parser.add_argument('--n-arrows', type=int, default=2000,
                         help='Tangent samples on smooth curve for VGM lift (default 2000)')
-    parser.add_argument('--n-fine', type=int, default=5000,
-                        help='Dense sample count for angle-spacing lookup (default 5000)')
-    parser.add_argument('--angle-tol', type=float, default=0.1,
-                        help='Max circular angle diff for gap matching (default 0.15 rad)')
+    parser.add_argument('--n-fine', type=int, default=8000,
+                        help='Dense sample count for angle-spacing lookup (default 8000)')
+    parser.add_argument('--dist-tol', type=float, default=3.0,
+                        help='Max distance from gap vertex to smooth curve for a match (default 3.0)')
     args = parser.parse_args()
     generate_frames(args.svg_file, show_frame_number=args.frame_number,
                     show_event_lines=args.event_lines, generate_vgm=args.vgm_lift,
-                    n_arrows=args.n_arrows, n_fine=args.n_fine, angle_tol=args.angle_tol)
+                    n_arrows=args.n_arrows, n_fine=args.n_fine, dist_tol=args.dist_tol)

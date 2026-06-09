@@ -90,7 +90,7 @@ def configure_theta_axis(ax):
 
 
 def map_gaps_to_smooth_curve(gaps, smooth_x, smooth_y, theta_fwd, theta_opp,
-                              svg_height, angle_tol=0.15):
+                              svg_height, dist_tol=3.0):
     """
     Find the best-matching point on the smooth-curve VGM lift for each gap.
 
@@ -102,10 +102,9 @@ def map_gaps_to_smooth_curve(gaps, smooth_x, smooth_y, theta_fwd, theta_opp,
     Algorithm per gap
     -----------------
     1. θ_gap  = atan2(-dir[1], dir[0]) % 2π   (y-flipped direction)
-    2. Candidates: smooth samples where min(circ_diff(θ_fwd, θ_gap),
-                                            circ_diff(θ_opp, θ_gap)) < angle_tol
-    3. Among candidates: pick the sample with minimum distance to the gap vertex
-       (vertex y also flipped to match plot coordinates)
+    2. Sort all smooth samples by min(circ_diff(θ_fwd, θ_gap), circ_diff(θ_opp, θ_gap))
+    3. Walk samples in that order; accept the first whose position is within dist_tol
+       of the gap vertex (vertex y also flipped to match plot coordinates)
 
     Parameters
     ----------
@@ -113,7 +112,7 @@ def map_gaps_to_smooth_curve(gaps, smooth_x, smooth_y, theta_fwd, theta_opp,
     smooth_x/y      : sampled smooth-curve positions in plot y-up coordinates, shape (N,)
     theta_fwd/opp   : forward / backward tangent angles of smooth samples, shape (N,)
     svg_height      : SVG canvas height used to flip y coordinates
-    angle_tol       : maximum circular angle difference for a sample to be a candidate
+    dist_tol        : maximum Euclidean distance for a candidate to be accepted
 
     Returns
     -------
@@ -130,25 +129,16 @@ def map_gaps_to_smooth_curve(gaps, smooth_x, smooth_y, theta_fwd, theta_opp,
         gx = float(gap.vertex.x)
         gy = svg_height - float(gap.vertex.y)
 
-        # Find candidates: samples whose fwd or opp tangent is close to θ_gap
-        best_diff = np.minimum(
-            _circ_diff(theta_fwd, theta_gap),
-            _circ_diff(theta_opp, theta_gap),
-        )
-        mask = best_diff < angle_tol
-        if not mask.any():
-            continue
+        diff_fwd = _circ_diff(theta_fwd, theta_gap)
+        diff_opp = _circ_diff(theta_opp, theta_gap)
 
-        # Among candidates, pick the nearest position
-        dist = np.hypot(smooth_x[mask] - gx, smooth_y[mask] - gy)
-        local_best = np.argmin(dist)
-        idx = np.where(mask)[0][local_best]
+        # Walk samples in order of increasing angular distance; accept first
+        # whose position is within dist_tol of the gap vertex
+        for idx in np.argsort(np.minimum(diff_fwd, diff_opp)):
+            if np.hypot(smooth_x[idx] - gx, smooth_y[idx] - gy) < dist_tol:
+                theta_match = (theta_fwd[idx] if diff_fwd[idx] <= diff_opp[idx]
+                               else theta_opp[idx])
+                results.append((smooth_x[idx], smooth_y[idx], float(theta_match)))
+                break
 
-        # Use whichever tangent direction (fwd or opp) matched better
-        theta_match = (theta_fwd[idx]
-                       if _circ_diff(theta_fwd[idx:idx+1], theta_gap)[0]
-                          <= _circ_diff(theta_opp[idx:idx+1], theta_gap)[0]
-                       else theta_opp[idx])
-
-        results.append((smooth_x[idx], smooth_y[idx], float(theta_match)))
     return results

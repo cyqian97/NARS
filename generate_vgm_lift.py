@@ -40,7 +40,7 @@ VIEW_ELEV = 31.4
 
 
 def run(svg_path, n_arrows=2000, n_fine=5000, n_steps=200,
-        angle_tol=0.15, out=None):
+        dist_tol=3.0, out=None):
 
     svg_h = get_svg_height(svg_path)
 
@@ -67,7 +67,7 @@ def run(svg_path, n_arrows=2000, n_fine=5000, n_steps=200,
 
     def record(step):
         matches = map_gaps_to_smooth_curve(
-            robot.gaps, sx, sy, theta_fwd, theta_opp, svg_h, angle_tol,
+            robot.gaps, sx, sy, theta_fwd, theta_opp, svg_h, dist_tol,
         )
         for mx, my, mt in matches:
             step_list.append(step)
@@ -135,9 +135,9 @@ if __name__ == '__main__':
                         help='dense sample count for angle-spacing lookup (default 5000)')
     parser.add_argument('--n-steps',   type=int,   default=200,
                         help='robot steps along the SVG path (default 200)')
-    parser.add_argument('--angle-tol', type=float, default=0.15,
-                        help='max circular angle diff for a candidate match (default 0.15 rad)')
+    parser.add_argument('--dist-tol', type=float, default=3.0,
+                        help='max distance from gap vertex to smooth curve for a match (default 3.0)')
     parser.add_argument('--out', default=None, help='output SVG filename')
     args = parser.parse_args()
     run(args.svg_file, args.n_arrows, args.n_fine, args.n_steps,
-        args.angle_tol, args.out)
+        args.dist_tol, args.out)

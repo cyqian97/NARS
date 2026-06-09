@@ -50,18 +50,29 @@ Press **P** to enter Path mode (requires at least one closed polygon).
 The codebase is split into a pygame-free **backend** (importable as a library) and a **frontend** that handles the interactive simulator.
 
 ```
-main.py               Entry point
-gap.py                Shared data types (Gap, GapEvent, GapEventType, EventInfo)
-utils.py              Color constants
+main.py                     Entry point
+generate_frames.py          Offline per-frame visualization pipeline (SVG + TikZ)
+generate_cylinder_frames.py S^1×[0,T] cylinder animation of gap direction histories
+generate_vgm_lift.py        VGM lift: 3D smooth-curve lift with robot gap markers
 
 backend/
+  gap.py              Shared data types (Gap, GapEvent, GapEventType, is_tracking_event)
   environment.py      Environment — builds geometric graphs, exposes gap event API
   robot.py            Robot — gap detection and event dispatch
-  gnt.py              GNT — Gap Navigation Tree algorithm (DoublyLinkedList)
+  vgmm.py             VGMM — Gap Navigation Tree algorithm (DoublyLinkedList)
+  sensors.py          Work-in-progress HGNT and CyclicList structures
 
 frontend/
   simulator.py        Simulator class + game_loop() pygame event/render loop
   display.py          All pygame rendering functions
+
+utils/
+  utils.py                  Color constants
+  svg_utils.py              SVG parsing, shadow computation, frame/sensor SVG generation
+  tex_utils.py              LaTeX/TikZ standalone sensor-HUD figure generation
+  video_utils.py            SVG/PNG frame folder → MP4 conversion
+  svg_curve_to_function.py  SVG Bézier parser and tangent sampler
+  vgm_lift.py               VGM lift core functions and gap-to-curve mapping
 
 pyvisgraph/
   vis_graph.py        VisGraph — orchestrates building all six geometric graphs
@@ -121,7 +132,7 @@ for edge in env.bitangent_comp.get_edges():
     print(edge.p1, edge.p2, edge.side)
 ```
 
-### Running the robot and GNT
+### Running the robot
 
 ```python
 from pyvisgraph.classes import Edge
@@ -134,11 +145,31 @@ robot.move(Edge(start, Point(400, 100)))
 
 # Inspect current gaps
 for gap in robot.gaps:
-    print(f"Gap #{gap.id}: vertex={gap.vertex}, side={gap.side}, dir={gap.dir}")
-
-# Inspect the GNT state
-print(robot.gnt)
+    print(f"vertex={gap.vertex}, side={gap.side}, dir={gap.dir}")
 ```
+
+### VGM lift plot
+
+`generate_vgm_lift.py` produces a 3D matplotlib plot of the **VGM lift** — each point on the smooth boundary curve is lifted to (x, y, θ) ∈ R²×S¹, where θ is the boundary tangent direction. Robot-detected gaps are overlaid as scatter markers, coloured by step index along the path.
+
+The input SVG must contain:
+- `id="curve"` — smooth Bézier boundary (the curve to lift)
+- `id="env"` — polygon approximation (used to build the `Environment` for gap detection)
+- `id="path"` — robot trajectory (replayed during simulation)
+
+```bash
+python generate_vgm_lift.py environments/env_1_smooth.svg
+# writes environments/env_1_smooth_vgm_lift.svg
+
+# options
+python generate_vgm_lift.py environments/env_1_smooth.svg \
+    --n-arrows 2000 \   # tangent samples on the smooth curve
+    --n-fine   5000 \   # dense samples for angle-spacing lookup
+    --n-steps  200  \   # robot steps along the path
+    --angle-tol 0.15    # max angle difference (rad) for a gap candidate match
+```
+
+The forward tangent lift is drawn in **red**, the backward (opposite) in **green**. Wrap-around discontinuities at the 0/2π seam are bridged with ▼/▲ markers. The floor projection of the smooth curve is drawn in steel blue.
 
 ### Save and load maps
 

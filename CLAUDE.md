@@ -50,7 +50,7 @@ Left-click to place polygon points; right-click to close a polygon. In path mode
 
 ## Offline Frame Generation
 
-Two scripts generate publication-quality visualizations from an SVG environment file (Inkscape format with layers `env`, `path`, and `robot`):
+Scripts generate publication-quality visualizations from an SVG environment file (Inkscape format with layers `env`, `path`, and `robot`):
 
 ```bash
 # Per-frame shadow, sensor HUD, and TikZ figures along a robot path
@@ -61,6 +61,9 @@ python generate_cylinder_frames.py environments/env_0.svg [--stride N] [--final-
 
 # Convert a folder of SVG or PNG frames to MP4
 python -m utils.video_utils <frames_dir> [--fps 30] [--format svg|png]
+
+# VGM lift: 3D plot of the smooth boundary lift + robot gap markers
+python generate_vgm_lift.py environments/env_1_smooth.svg [--n-arrows N] [--n-fine N] [--n-steps N] [--angle-tol F] [--out FILE]
 ```
 
 `generate_frames.py` writes four output directories next to the input SVG:
@@ -70,6 +73,8 @@ python -m utils.video_utils <frames_dir> [--fps 30] [--format svg|png]
 - `<env>_cyclic_svg/` — cyclic-order diagrams (SVG, currently disabled)
 
 `generate_cylinder_frames.py` writes PNG frames to `<env>_cylinder_frames/` using pyvista for 3-D rendering.
+
+`generate_vgm_lift.py` reads a dual-path SVG (paths with id `"curve"` and `"env"` in the same file), lifts the smooth Bézier boundary into R²×S¹ (θ on z-axis), runs the robot along the embedded path to collect gap detections, maps each gap to its nearest point on the smooth lift, and saves the resulting 3D plot as `<env>_vgm_lift.svg`. The SVG must also contain paths with id `"path"` (robot trajectory) and `"env"` (polygon approximation used to build the `Environment`).
 
 ## Algorithm Background
 
@@ -121,6 +126,7 @@ gaps = robot.gaps                      # list of Gap objects
 main.py                     Entry point — calls frontend.simulator.game_loop()
 generate_frames.py          Offline per-frame visualization pipeline (SVG + TikZ)
 generate_cylinder_frames.py Cylinder S^1×[0,T] animation of gap direction histories
+generate_vgm_lift.py        VGM lift plot: 3D smooth-curve lift with robot gap markers
 debug_shadow.py             One-off matplotlib debug script for shadow ray geometry
 
 backend/
@@ -139,6 +145,8 @@ utils/
   svg_utils.py              SVG parsing, shadow computation, frame/sensor/cyclic SVG generation
   tex_utils.py              LaTeX/TikZ standalone sensor-HUD figure generation
   video_utils.py            SVG/PNG frame folder → MP4 conversion (cairosvg + opencv)
+  svg_curve_to_function.py  SVG Bézier path parser and tangent sampler
+  vgm_lift.py               VGM lift core: split_at_jumps, draw_lift, map_gaps_to_smooth_curve
 
 pyvisgraph/
   classes.py                Point, Edge, Chain primitives
@@ -186,6 +194,10 @@ Polygons (user-drawn or loaded from JSON)
 **`utils/tex_utils.py`** — `generate_sensor_tex(gaps)` returns a standalone LaTeX/TikZ document rendering the gap-sensor HUD, mirroring `generate_sensor_svg` in proportions. Can be run as a script: `python utils/tex_utils.py 0 30 60 --radius 3.5 --output sensor.tex`.
 
 **`utils/video_utils.py`** — `svg_folder_to_mp4()` and `png_folder_to_mp4()` rasterize frame directories into MP4 videos. CLI: `python -m utils.video_utils <frames_dir>`. Requires `cairosvg` and `opencv-python`.
+
+**`utils/svg_curve_to_function.py`** — SVG Bézier path parser and sampler (ported from external figures script). `parse_svg_path(d)` decodes M/L/C/Q/V/H/Z commands into cubic Bézier segments. `svg_to_curve(svg_path, flip_y, path_id)` extracts a named path and returns `(x, y, beziers)`. `sample_tangents(beziers, n_arrows, flip_y, svg_height, by_angle, n_fine)` returns `(x, y, dx, dy)` arrays, spacing samples by cumulative bending angle when `by_angle=True`. `get_svg_height(svg_path)` reads the canvas height from the SVG `height` attribute (in mm, matching the viewBox).
+
+**`utils/vgm_lift.py`** — VGM lift plotting utilities. `split_at_jumps(x, y, theta)` partitions a lift curve into continuous segments at wrap-around discontinuities (|Δθ| > π). `draw_lift(ax, segments, markers, gap_fills, color, ...)` renders one 3D lift curve with ▼/▲ wrap markers. `configure_theta_axis(ax)` sets z-limits to [−π, 2π] with π-labelled ticks. `map_gaps_to_smooth_curve(gaps, smooth_x, smooth_y, theta_fwd, theta_opp, svg_height, angle_tol)` maps robot-detected gaps onto the smooth-curve lift: each gap is a bitangent point so `gap.dir` approximates the boundary tangent; the function flips y (SVG→plot coords), filters by circular angle difference, then picks the nearest candidate by Euclidean distance.
 
 **`pyvisgraph/`** — Extended fork of the pyvisgraph library.
 - `visible_vertices.py`: `bitangent_lines()` is the angular sweep for visibility; `convex_chain()` identifies maximal convex runs; `bitangent_complement()` computes complement rays (S/M triggers); `inflection_lines()` shoots rays from chain start/end (A/D triggers); `extension_lines()` shoots rays from every internal convex-chain edge (N/P triggers).

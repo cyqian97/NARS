@@ -85,13 +85,16 @@ def run(svg_path, n_arrows=2000, n_fine=5000, n_steps=200,
     ax = fig.add_subplot(111, projection='3d')
     ax.computed_zorder = False  # use explicit zorder instead of depth sort
 
-    segs_fwd, marks_fwd, _ = split_at_jumps(sx, sy, theta_fwd)
-    segs_opp, marks_opp, _ = split_at_jumps(sx, sy, theta_opp)
+    # Close the smooth curve so there is no gap between the last and first sample
+    sx_c = np.append(sx, sx[0])
+    sy_c = np.append(sy, sy[0])
+    segs_fwd, marks_fwd, _ = split_at_jumps(sx_c, sy_c, np.append(theta_fwd, theta_fwd[0]))
+    segs_opp, marks_opp, _ = split_at_jumps(sx_c, sy_c, np.append(theta_opp, theta_opp[0]))
     draw_lift(ax, segs_fwd, marks_fwd, [], color='red',   lw=1.5, zorder=4)
     draw_lift(ax, segs_opp, marks_opp, [], color='green', lw=1.5, zorder=4)
 
-    # Floor projection of the smooth curve
-    ax.plot(sx, sy, zs=FLOOR_Z, zdir='z', color='steelblue', lw=1.5, zorder=2)
+    # Floor projection of the smooth curve (closed)
+    ax.plot(sx_c, sy_c, zs=FLOOR_Z, zdir='z', color='steelblue', lw=1.5, zorder=2)
 
     # Gap markers coloured by step index
     if step_list:

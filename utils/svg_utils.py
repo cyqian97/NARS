@@ -148,6 +148,12 @@ def parse_svg_env_file(svg_path):
     env_transform = env_elem.get('transform', '')
     tx, ty = parse_transform(env_transform)
     env_points = parse_svg_path(env_d, (tx, ty))
+    # Drop consecutive duplicate vertices (degenerate segments cause 3-edge nodes)
+    env_points_dedup = [env_points[0]] if env_points else []
+    for p in env_points[1:]:
+        if p != env_points_dedup[-1]:
+            env_points_dedup.append(p)
+    env_points = env_points_dedup
     # Drop duplicate closing vertex if path ends where it started
     if len(env_points) > 1 and env_points[0] == env_points[-1]:
         env_points = env_points[:-1]

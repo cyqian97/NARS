@@ -118,7 +118,8 @@ def bitangent_lines(point, graph, scan="full"):
         if is_visible and p not in graph.get_adjacent_points(point):
             is_visible = not edge_in_polygon(point, p, graph)
 
-        # Check the two ends of a bitangent line, the two edges on each side should be on the same side of the line
+        # Check the two ends of a bitangent line, 
+        # the two edges on each side should be on the same side of the line
         point_count = 0
         if is_visible:
             sides = []

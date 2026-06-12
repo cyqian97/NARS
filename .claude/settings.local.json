@@ -6,7 +6,8 @@
       "Read(///wsl.localhost/Ubuntu//**)",
       "Bash(python debug_shadow.py)",
       "PowerShell(wsl -d Ubuntu -e bash -c \"/root/miniconda3/envs/NARS/bin/python /root/NARS/debug_shadow.py\")",
-      "PowerShell(wsl -d Ubuntu --exec git -C /root/NARS log --oneline -30)"
+      "PowerShell(wsl -d Ubuntu --exec git -C /root/NARS log --oneline -30)",
+      "PowerShell(wsl -d Ubuntu -e bash -c \"sed -n '547,562p' /root/NARS/pyvisgraph/visible_vertices.py\")"
     ]
   }
 }

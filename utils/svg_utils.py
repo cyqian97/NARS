@@ -104,18 +104,19 @@ def parse_svg_path(d, transform=(0.0, 0.0)):
 # SVG file parsing
 # ---------------------------------------------------------------------------
 
-def parse_svg_env_file(svg_path):
+def parse_svg_env_file(svg_path, env_path_id='env'):
     """Parse an environment SVG and return a data dict.
 
-    Looks for elements with id='env' (wall path), id='path' (robot trajectory),
-    and id='robot' (robot visualization group).
+    Looks for a polygon path with *env_path_id* (default 'env'; use 'obstacle'
+    for SVGs where the polygon represents an obstacle), id='path' (robot
+    trajectory), and id='robot' (robot visualization group).
 
     Returned dict keys:
-        env_polygon_points  list[(x,y)]  parsed wall vertices in SVG coords
+        env_polygon_points  list[(x,y)]  parsed polygon vertices in SVG coords
         path_points         list[(x,y)]  trajectory points in SVG coords
-        env_path_d          str          raw 'd' attribute of env path
-        env_path_style      str          style attribute of env path
-        env_path_transform  str          transform attribute of env path
+        env_path_d          str          raw 'd' attribute of polygon path
+        env_path_style      str          style attribute of polygon path
+        env_path_transform  str          transform attribute of polygon path
         robot_cx_local      float        cx of robot circles in group coords
         robot_cy_local      float        cy of robot circles in group coords
         robot_group_style   str          style of the robot <g> element
@@ -139,10 +140,10 @@ def parse_svg_env_file(svg_path):
     svg_height = root.get('height', '')
     svg_viewbox = root.get('viewBox', '')
 
-    # --- env path ---
-    env_elem = find_id('path', 'env')
+    # --- env/obstacle polygon path ---
+    env_elem = find_id('path', env_path_id)
     if env_elem is None:
-        raise ValueError("SVG must contain an element with id='env'")
+        raise ValueError(f"SVG must contain an element with id='{env_path_id}'")
     env_d = env_elem.get('d', '')
     env_style = env_elem.get('style', '')
     env_transform = env_elem.get('transform', '')
@@ -188,6 +189,12 @@ def parse_svg_env_file(svg_path):
             first_cx = float(circle.get('cx', 0))
             first_cy = float(circle.get('cy', 0))
 
+    # --- optional star path ---
+    star_elem = find_id('path', 'star')
+    star_path_d = star_elem.get('d', '') if star_elem is not None else None
+    star_path_style = star_elem.get('style', '') if star_elem is not None else ''
+    star_path_transform = star_elem.get('transform', '') if star_elem is not None else ''
+
     return {
         'env_polygon_points': env_points,
         'path_points': path_points,
@@ -201,6 +208,9 @@ def parse_svg_env_file(svg_path):
         'robot_cy_local': first_cy,
         'robot_group_style': robot_group_style,
         'robot_circles': circles,
+        'star_path_d': star_path_d,
+        'star_path_style': star_path_style,
+        'star_path_transform': star_path_transform,
         'svg_width': svg_width,
         'svg_height': svg_height,
         'svg_viewbox': svg_viewbox,
@@ -370,7 +380,7 @@ def _xml_escape(s):
 
 
 def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=None,
-                       show_event_lines=False, env=None):
+                       show_event_lines=False, env=None, show_shadow_polys=True):
     """Return an SVG string for one animation frame.
 
     svg_data          -- dict from parse_svg_env_file()
@@ -379,6 +389,7 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=No
     frame_number      -- if not None, renders the frame number in the bottom-right corner
     show_event_lines  -- if True, draw bitangent_comp / extension / inflection edges
     env               -- Environment instance; required when show_event_lines is True
+    show_shadow_polys -- if False, gap lines (near/far) are drawn but filled polygons are omitted
 
     Draw order (bottom → top): event lines, shadow polygons, env, shadow lines, robot, frame label.
     """
@@ -428,11 +439,25 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=No
         f'  <path id="env" d="{env_d}" style="{env_style}" transform="{env_transform}"/>',
     ]
 
+    # --- star (static overlay, reproduced verbatim from the source SVG) ---
+    star_parts = []
+    raw_star_d = svg_data.get('star_path_d')
+    if raw_star_d is not None:
+        star_d = _xml_escape(raw_star_d)
+        star_style = _xml_escape(svg_data.get('star_path_style', ''))
+        star_transform = _xml_escape(svg_data.get('star_path_transform', ''))
+        star_parts.append(
+            f'  <path id="star" d="{star_d}" style="{star_style}"'
+            + (f' transform="{star_transform}"' if star_transform else '')
+            + '/>'
+        )
+
     # --- shadow polygons ---
     shadow_poly_parts = []
-    for item in shadow_polys:
-        pts_str = ' '.join(f'{p.x:.4f},{p.y:.4f}' for p in item['poly'])
-        shadow_poly_parts.append(f'  <polygon points="{pts_str}" style="{shadow_style}"/>')
+    if show_shadow_polys:
+        for item in shadow_polys:
+            pts_str = ' '.join(f'{p.x:.4f},{p.y:.4f}' for p in item['poly'])
+            shadow_poly_parts.append(f'  <polygon points="{pts_str}" style="{shadow_style}"/>')
 
     # --- frame number label (bottom-right corner) ---
     frame_label_parts = []
@@ -468,15 +493,15 @@ def generate_frame_svg(svg_data, robot_x, robot_y, shadow_polys, frame_number=No
         _edge_lines(env.extension.get_edges(),      '#D2E6FF', '#FFDCDC', sw / 4)
         _edge_lines(env.inflection.get_edges(),     '#EDB120', '#7E2F8E')
 
-    # Assemble in draw order: event lines → shadow polygons → env → shadow lines → robot → frame label
+    # Assemble in draw order: event lines → shadow polygons → env → star → shadow lines → robot → frame label
     header = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<svg width="{width}" height="{height}" viewBox="{viewbox}"',
         f'     xmlns="http://www.w3.org/2000/svg">',
     ]
     return '\n'.join(
-        header + event_line_parts + shadow_poly_parts + env_parts + shadow_line_parts
-        + robot_parts + frame_label_parts + ['</svg>']
+        header + event_line_parts + shadow_poly_parts + env_parts + star_parts
+        + shadow_line_parts + robot_parts + frame_label_parts + ['</svg>']
     )
 
 

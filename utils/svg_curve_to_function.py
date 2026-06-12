@@ -227,6 +227,18 @@ def _build_angle_lookup(beziers: list[np.ndarray],
     angle_diffs = np.diff(np.unwrap(raw_angles))
     cumulative_bend = np.concatenate([[0.0], np.cumsum(np.abs(angle_diffs))])
 
+    # Blend with arc length so that straight segments (zero bending) still
+    # receive samples proportional to their physical length.  Corner sweeps
+    # (fixed position, non-zero bending) are carried by the bend component;
+    # straight bezier sides are carried by the arc component.
+    seg_lengths = np.sqrt(np.sum(np.diff(pts_all, axis=0) ** 2, axis=1))
+    cumulative_arc = np.concatenate([[0.0], np.cumsum(seg_lengths)])
+    total_bend = cumulative_bend[-1]
+    total_arc = cumulative_arc[-1]
+    if total_bend > 0 and total_arc > 0:
+        cumulative_bend = (cumulative_bend / total_bend
+                           + cumulative_arc / total_arc)
+
     return pts_all, tans_all, cumulative_bend
 
 
